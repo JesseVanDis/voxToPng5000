@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+# Cache stuff
+src/.idea
+src/cmake-build-debug
+
