@@ -30,6 +30,7 @@ error Model::loadData(Loader& loader)
 		v.y = loader.readNextChar();
 		v.z = loader.readNextChar();
 		v.colorIndex = loader.readNextChar();
+		v.colorIndex--;
 	}
 	return ""s;
 }
