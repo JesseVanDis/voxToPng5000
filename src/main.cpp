@@ -1,4 +1,5 @@
 #include <iostream>
+#include <map>
 
 #include "stdlib.h"
 #include "stdio.h"
@@ -6,33 +7,62 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #include "scene.hpp"
+#include "arguments.hpp"
 
+static void printHelp(const Arguments& args)
+{
+	printf("Usage: voxpng [OPTIONS]\n");
+	printf("converts .vox to png file(s)\n");
+	printf("example: voxpng -i ~/guy.vox -o ~/guyPngs\n");
+	printf(" ");
+	args.printOptions();
+	printf(" ");
+	printf("if any error occurs, the exit status is 2.");
+}
 
 int main(int argc, char **argv)
 {
-	if(argc < 3)
+	Arguments args(argc, argv);
+
+	if(argc < 3 || args.getArgument_ShouldShowHelp())
 	{
-		printf("Usage: \"input.vox\" \"outputfolder\"\n");
-		return 1;
+		printHelp(args);
+		return 0;
 	}
-
-	const char* pVoxPath = argv[1];
-	const char* pPngPath = argv[2];
-
-	Scene scene;
-	error err = scene.load(pVoxPath);
-	if(!err.empty())
+	else
 	{
-		printf("%s\n", err.c_str());
-		return 1;
-	}
+		auto voxPath = args.getArgument_InputPath();
+		auto outputPath = args.getArgument_OutputPath();
+		auto setting = args.getArgument_Setting();
+		if(voxPath.handleError() || outputPath.handleError() || setting.handleError())
+		{
+			return 2;
+		}
 
-	err = scene.saveAsPngArray(pPngPath);
-	if(!err.empty())
-	{
-		printf("%s\n", err.c_str());
-		return 1;
-	}
+		Scene scene;
+		error err = scene.load(voxPath.result);
+		if(!err.empty())
+		{
+			printf("%s\n", err.c_str());
+			return 2;
+		}
 
-	return 0;
+		switch(setting.result)
+		{
+			case Setting_SeperatePngs:
+				err = scene.saveAsPngArray(outputPath.result);
+				break;
+
+			case Setting_Merged:
+				err = scene.saveAsMergedPng(outputPath.result);
+				break;
+		}
+		if(!err.empty())
+		{
+			printf("%s\n", err.c_str());
+			return 2;
+		}
+
+		return 0;
+	}
 }

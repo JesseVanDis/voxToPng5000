@@ -279,7 +279,16 @@ const Color& Scene::lookupPaletteColor(uint8_t colorIndex) const
 	m_palette.lookupColor(colorIndex);
 }
 
-error Scene::saveAsPngArray(const string& targetFolderPath)
+string Scene::expandTargetFilePath(const string& targetFilePath, size_t sceneSizeX, size_t sceneSizeY, size_t sceneSizeZ) const
+{
+	string result = targetFilePath;
+	replaceAll(result, "{SIZE_X}", to_string(sceneSizeX));
+	replaceAll(result, "{SIZE_Y}", to_string(sceneSizeY));
+	replaceAll(result, "{SIZE_Z}", to_string(sceneSizeZ));
+	return result;
+}
+
+void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth)
 {
 	int x0 = INT32_MAX;
 	int y0 = INT32_MAX;
@@ -292,29 +301,54 @@ error Scene::saveAsPngArray(const string& targetFolderPath)
 
 	const size_t width = (size_t)max(x1-x0, 0);
 	const size_t height = (size_t)max(y1-y0, 0);
-//	const size_t depth = (size_t)max(z1-z0, 0);
+	const size_t depth = (size_t)max(z1-z0, 0);
 
-	vector<vector<Color>> imageLayers;
-	imageLayers.resize((size_t)max(z1-z0, 0));
+	layers.resize((size_t)max(z1-z0, 0));
 	for(int z=z0; z<z1; z++)
 	{
-		vector<Color>& layer = imageLayers[z - z0];
+		vector<Color>& layer = layers[z - z0];
 		layer.resize(width*height);
 
-		size_t i=0;
-		for(int y=y0; y<y1; y++)
+		size_t ty=0;
+		size_t tx=0;
+		for(int y=y0; y<y1; y++, ty++)
 		{
-			for(int x=x0; x<x1; x++)
+			tx=0;
+			for(int x=x0; x<x1; x++, tx++)
 			{
+				size_t t = (width-(tx+1))+ty*width;
 				if(const Color* color = getVoxel(x, y, z))
 				{
-					assert(i < layer.size());
-					layer[i] = *color;
+					assert(t < layer.size());
+					layer[t] = *color;
 				}
-				i++;
 			}
 		}
 	}
+
+	if(pWidth != nullptr)
+	{
+		*pWidth = width;
+	}
+	if(pHeight != nullptr)
+	{
+		*pHeight = height;
+	}
+	if(pDepth != nullptr)
+	{
+		*pDepth = depth;
+	}
+
+}
+
+error Scene::saveAsPngArray(const string& targetFolderPath)
+{
+	size_t width = 0;
+	size_t height = 0;
+	size_t depth = 0;
+
+	vector<vector<Color>> imageLayers;
+	fillImageLayers(imageLayers, &width, &height, &depth);
 
 	for(size_t i=0; i<imageLayers.size(); i++)
 	{
@@ -331,8 +365,56 @@ error Scene::saveAsPngArray(const string& targetFolderPath)
 		{
 			return "cannot write an image of width or height 0."s;
 		}
-		savePng(layer, width, height, outputPath);
+		error err = savePng(layer, width, height, outputPath);
+		if(err != ""s)
+		{
+			return err;
+		}
 	}
 
 	return ""s;
+}
+
+error Scene::saveAsMergedPng(const string& targetFilePath)
+{
+	size_t width = 0;
+	size_t height = 0;
+	size_t depth = 0;
+
+	vector<vector<Color>> imageLayers;
+	fillImageLayers(imageLayers, &width, &height, &depth);
+
+	string filePath = expandTargetFilePath(targetFilePath, width, height, depth);
+
+	vector<Color> data;
+	data.resize(width*height*depth);
+
+	size_t imgWidth = width*depth;
+	size_t imgHeight = height;
+
+	for(size_t z=0; z<imageLayers.size(); z++)
+	{
+		const vector<Color>& image2d = imageLayers[z];
+		for(size_t y=0; y<height; y++)
+		{
+			size_t yPos = y;
+			for(size_t x=0; x<width; x++)
+			{
+				size_t xPos = z*width+x;
+
+				size_t targetIndex = xPos + imgWidth*yPos;
+				size_t sourceIndex = x + width*y;
+				assert(targetIndex < data.size());
+				assert(sourceIndex < image2d.size());
+				data[targetIndex] = image2d[sourceIndex];
+			}
+		}
+	}
+
+	if(width == 0 || height == 0)
+	{
+		return "cannot write an image of width or height 0."s;
+	}
+
+	return savePng(data, imgWidth, imgHeight, filePath);
 }
