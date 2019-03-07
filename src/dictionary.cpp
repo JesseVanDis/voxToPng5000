@@ -61,9 +61,7 @@ error Dictionary::load(Loader& loader)
 
 		int32_t valueSize = loader.readNextInt32();
 		vector<char> valueVec = loader.readNextChars(valueSize);
-		valueVec.push_back('\0');
-		string value = valueVec.data();
-		m_data[key] = value;
+		m_data[key] = valueVec;
 	}
 
 	return ""s;
@@ -78,18 +76,26 @@ string Dictionary::getValue(const string& key, const string& defaultValue) const
 {
 	if(hasKey(key))
 	{
-		return m_data.at(key);
+		vector<char> data = m_data.at(key);
+		data.push_back('\0');
+		string str = (const char*)data.data();
+		return str;
 	}
 	return defaultValue;
 }
 
 int Dictionary::getValue(const string& key, int defaultValue) const
 {
-	if(hasKey(key))
+	return readNumberFromString(getValue(key, to_string(defaultValue)).c_str(), 0, defaultValue);
+}
+
+vector<char> Dictionary::getData(const string& key) const
+{
+	if(!hasKey(key))
 	{
-		return readNumberFromString(m_data.at(key).c_str(), 0, defaultValue);
+		return vector<char>();
 	}
-	return defaultValue;
+	return m_data.at(key);
 }
 
 vector<int> Dictionary::getValues(const string& key, const vector<int>& defaultValues) const
@@ -98,7 +104,7 @@ vector<int> Dictionary::getValues(const string& key, const vector<int>& defaultV
 	{
 		return defaultValues;
 	}
-	const string& value = m_data.at(key);
+	const string& value = getValue(key, "");
 	vector<int> numbers;
 	numbers.reserve(defaultValues.size() + 16);
 	for(size_t i=0; i<10000; i++)

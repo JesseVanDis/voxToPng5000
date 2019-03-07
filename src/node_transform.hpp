@@ -15,13 +15,7 @@ class NodeTransformFrame
 
 	private:
 		Dictionary m_attributes;
-
-		struct
-		{
-			int x = 0;
-			int y = 0;
-			int z = 0;
-		} m_translation;
+		int m_transformation[16];
 };
 
 class NodeTransform : public Node

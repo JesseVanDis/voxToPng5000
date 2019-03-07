@@ -19,10 +19,11 @@ class Dictionary
 		bool			hasKey(const string& key) const;
 		string 			getValue(const string& key, const string& defaultValue) const;
 		int 			getValue(const string& key, int defaultValue) const;
+		vector<char>	getData(const string& key) const;
 		vector<int> 	getValues(const string& key, const vector<int>& defaultValues) const;
 
 	private:
-		map<string, string> m_data;
+		map<string, vector<char> > m_data;
 };
 
 
