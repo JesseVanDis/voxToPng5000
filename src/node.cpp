@@ -1,4 +1,6 @@
 
+#include <cstring>
+#include <assert.h>
 #include "node.hpp"
 #include "loader.hpp"
 #include "scene.hpp"
@@ -28,6 +30,9 @@ int32_t Node::getId() const
 
 void Node::getGlobalPosition(int* pX, int* pY, int* pZ) const
 {
+	transformGlobal(0, 0, 0, pX, pY, pZ);
+
+	/*
 	int x = 0;
 	int y = 0;
 	int z = 0;
@@ -70,6 +75,75 @@ void Node::getGlobalPosition(int* pX, int* pY, int* pZ) const
 	{
 		*pZ = z;
 	}
+	*/
+}
+
+void Node::transformGlobal(int x, int y, int z, int* pX, int* pY, int* pZ) const
+{
+	int current[16];
+	memcpy(current, s_identity, sizeof(current));
+
+	vector<const Node*> hierarchy = getHierarchy();
+
+	for(size_t i=0; i<hierarchy.size(); i++)
+	{
+		if(const NodeTransform* pTransform = hierarchy[i]->toNodeTransform())
+		{
+			int nodeTransformation[16];
+			int multiplied[16];
+			pTransform->getTransformation(nodeTransformation);
+
+			// nodepos: -4, 0, 3
+
+			// it should be rotating at exacly the center!!
+
+			// rotate then translation following the rotation ??
+
+
+			MATRIXARRAY_MUL_TO(nodeTransformation, current, multiplied);
+			//MATRIXARRAY_MUL_TO(current, nodeTransformation, multiplied);
+
+			memcpy(current, multiplied, sizeof(current));
+		}
+	}
+
+	int pos[4] = {x, y, z, 1};
+	int result[4] = {0, 0, 0, 0};
+
+	MATRIX_MUL_TO(current, 4, 4, pos, 4, 1, result);
+	//MATRIX_MUL_TO(pos, 1, 4, current, 4, 4, result);
+
+	if(pX != nullptr)
+	{
+		*pX = result[0];
+	}
+	if(pY != nullptr)
+	{
+		*pY = result[1];
+	}
+	if(pZ != nullptr)
+	{
+		*pZ = result[2];
+	}
+}
+
+vector<const Node*> Node::getHierarchy() const
+{
+	vector<const Node*> hierarchyReverserd;
+	hierarchyReverserd.reserve(32);
+	const Node* pParent = this;
+	while(pParent != nullptr)
+	{
+		hierarchyReverserd.push_back(pParent);
+		pParent = pParent->getParent();
+	}
+	vector<const Node*> hierarchy;
+	hierarchy.reserve(hierarchyReverserd.size());
+	for(int i=(int)hierarchyReverserd.size()-1; i>=0; i--)
+	{
+		hierarchy.push_back(hierarchyReverserd[i]);
+	}
+	return hierarchy;
 }
 
 void Node::setParent(const Node* pParent)

@@ -36,11 +36,14 @@ class Node
 		void 							getGlobalPosition(int* pX, int* pY, int* pZ) const;
 
 	protected:
+		void 							transformGlobal(int x, int y, int z, int* pX, int* pY, int* pZ) const;
 		void 							setParent(const Node* pParent);
 		const Node*						getParent() const;
 		const Context& 					getContext() const;
 
 	private:
+		vector<const Node*>				getHierarchy() const;
+
 		const Node*	m_pParent = nullptr;
 		Context 	m_context;
 		int32_t 	m_id = ~0u;

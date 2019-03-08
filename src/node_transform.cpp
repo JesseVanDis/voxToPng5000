@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <cstring>
 #include "node_transform.hpp"
 #include "loader.hpp"
 
@@ -136,6 +137,11 @@ void NodeTransformFrame::getTranslation(int* pX, int* pY, int* pZ) const
 	}
 }
 
+void NodeTransformFrame::getTransformation(int pBuffer[16]) const
+{
+	memcpy(pBuffer, m_transformation, sizeof(m_transformation));
+}
+
 NodeTransform::NodeTransform(const Context& context)
 	: Node(context)
 	, m_child(this, context)
@@ -186,6 +192,19 @@ void NodeTransform::getTranslation(int* pX, int* pY, int* pZ) const
 	if(!m_frames.empty())
 	{
 		m_frames[0].getTranslation(pX, pY, pZ);
+	}
+}
+
+void NodeTransform::getTransformation(int pBuffer[16]) const
+{
+	assert(m_frames.size() == 1); // something changed in the .vox standard ( should normally have exacly 1 at all times )
+	if(m_frames.size() != 1)
+	{
+		printf("WARNING: Found multiple transform frame attributes. positions of nodes may be incorrect");
+	}
+	if(!m_frames.empty())
+	{
+		m_frames[0].getTransformation(pBuffer);
 	}
 }
 

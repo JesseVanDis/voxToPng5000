@@ -12,7 +12,7 @@ struct Voxel
 	int8_t x = 0;
 	int8_t y = 0;
 	int8_t z = 0;
-	int8_t colorIndex = 0;
+	uint8_t colorIndex = 0;
 };
 
 class Model

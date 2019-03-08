@@ -256,16 +256,15 @@ const Color* Scene::getVoxel(int x, int y, int z) const
 	{
 		if(const NodeShape* pShape = node->toNodeShape())
 		{
-			int nodePosX = 0;
-			int nodePosY = 0;
-			int nodePosZ = 0;
-			pShape->getGlobalPosition(&nodePosX, &nodePosY, &nodePosZ);
-
-			int localX = x - nodePosX;
-			int localY = y - nodePosY;
-			int localZ = z - nodePosZ;
-
-			if(const Color* pColor = pShape->getVoxel(localX, localY, localZ))
+			if(pShape->getId() == 5 && x == 4 && y == 4 && z == 4)
+			{
+				printf("blie");
+			}
+			if(pShape->getId() == 7 && x == -4 && y == 1 && z == 4)
+			{
+				printf("bla");
+			}
+			if(const Color* pColor = pShape->getVoxelGlobal(x, y, z))
 			{
 				return pColor;
 			}
@@ -386,11 +385,13 @@ error Scene::saveAsMergedPng(const string& targetFilePath)
 
 	string filePath = expandTargetFilePath(targetFilePath, width, height, depth);
 
-	vector<Color> data;
-	data.resize(width*height*depth);
+	bool drawBorder=1;
 
-	size_t imgWidth = width*depth;
+	size_t imgWidth = (width * depth)+(drawBorder ? (depth-1) : 0);
 	size_t imgHeight = height;
+
+	vector<Color> data;
+	data.resize(imgWidth*imgHeight*depth);
 
 	for(size_t z=0; z<imageLayers.size(); z++)
 	{
@@ -400,13 +401,22 @@ error Scene::saveAsMergedPng(const string& targetFilePath)
 			size_t yPos = y;
 			for(size_t x=0; x<width; x++)
 			{
-				size_t xPos = z*width+x;
+				size_t xPos = (z*width+x);
 
-				size_t targetIndex = xPos + imgWidth*yPos;
+				size_t targetIndex = (xPos + imgWidth*yPos)+(drawBorder ? z : 0);
 				size_t sourceIndex = x + width*y;
 				assert(targetIndex < data.size());
 				assert(sourceIndex < image2d.size());
 				data[targetIndex] = image2d[sourceIndex];
+			}
+			if(drawBorder && z > 0)
+			{
+				size_t xPos = z*width;
+				size_t targetIndex = (((xPos + imgWidth*yPos)+z)-1);
+				data[targetIndex].r=0;
+				data[targetIndex].g=0;
+				data[targetIndex].b=0;
+				data[targetIndex].a=255;
 			}
 		}
 	}

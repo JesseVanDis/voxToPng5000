@@ -14,7 +14,7 @@ using namespace std;
 		(_To)[12] = (_MatA)[12]*(_MatB)[0 ] + (_MatA)[13]*(_MatB)[4 ] + (_MatA)[14]*(_MatB)[8 ] + (_MatA)[15]*(_MatB)[12]; (_To)[13] = (_MatA)[12]*(_MatB)[1 ] + (_MatA)[13]*(_MatB)[5 ] + (_MatA)[14]*(_MatB)[9 ] + (_MatA)[15]*(_MatB)[13]; (_To)[14] = (_MatA)[12]*(_MatB)[2 ] + (_MatA)[13]*(_MatB)[6 ] + (_MatA)[14]*(_MatB)[10] + (_MatA)[15]*(_MatB)[14]; (_To)[15] = (_MatA)[12]*(_MatB)[3 ] + (_MatA)[13]*(_MatB)[7 ] + (_MatA)[14]*(_MatB)[11] + (_MatA)[15]*(_MatB)[15]; }
 
 #define MATRIX_MUL_TO(MatrixAIn, MatrixARows, MatrixAcolumns, MatrixBIn, MatrixBRows, MatrixBcolumns, MatrixOut){ \
-		assert(MatrixAcolumns == MatrixBRows && "number of rows must equal the number of columns of this matrix"); \
+		static_assert(MatrixAcolumns == MatrixBRows, "number of rows must equal the number of columns of this matrix"); \
 		memset((MatrixOut), 0, sizeof(MatrixOut[0]) * MatrixARows * MatrixBcolumns); \
 		for(unsigned int MatARow = 0; MatARow < MatrixARows; MatARow++) for(unsigned int MatBCol = 0; MatBCol < MatrixBcolumns; MatBCol++) for(unsigned int MatACol = 0; MatACol < MatrixAcolumns; MatACol++) \
 		(MatrixOut)[MatBCol + MatARow * MatrixBcolumns] += (MatrixAIn)[MatACol + MatARow * MatrixAcolumns] * (MatrixBIn)[MatBCol + MatACol * MatrixBcolumns]; \
@@ -41,6 +41,9 @@ static bool getBit(uint8_t byte, int position) // position in range 0-7
 {
 	return ((byte >> position) & 0x1) > 0;
 }
+
+static int s_identity[16] = {1, 0, 0, 0,    0, 1, 0, 0,     0, 0, 1, 0,     0, 0, 0, 1};
+
 
 //static bool getBit(uint8_t byte, int position) // position in range 0-7
 //{

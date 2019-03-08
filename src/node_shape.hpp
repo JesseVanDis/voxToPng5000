@@ -35,6 +35,7 @@ class NodeShape : public Node
 		error 				load(Loader& loader) override;
 		const NodeShape*	toNodeShape() const override { return this; };
 		const Color*		getVoxel(int x, int y, int z) const;
+		const Color*		getVoxelGlobal(int x, int y, int z) const;
 		void 				getSize(int32_t* pX, int32_t* pY, int32_t* pZ) const;
 
 	private:

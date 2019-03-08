@@ -83,6 +83,35 @@ const Color* NodeShape::getVoxel(int x, int y, int z) const
 	return nullptr;
 }
 
+const Color* NodeShape::getVoxelGlobal(int x, int y, int z) const
+{
+	for(auto&& modelWeak : models)
+	{
+		shared_ptr<Model> model = modelWeak->getModel().lock();
+		const vector<Voxel>& voxels = model->getVoxels();
+
+		for(auto&& voxel : voxels)
+		{
+			int voxelXGlobal = 0;
+			int voxelYGlobal = 0;
+			int voxelZGlobal = 0;
+
+			if(voxel.colorIndex == 6 && x == -4 && y == 1 && z == 4)
+			{
+				printf("huh");
+			}
+
+			transformGlobal(voxel.x, voxel.y, voxel.z, &voxelXGlobal, &voxelYGlobal, &voxelZGlobal);
+
+			if(voxelXGlobal == x && voxelYGlobal == y && voxelZGlobal == z)
+			{
+				return &getContext().pScene->lookupPaletteColor(voxel.colorIndex);
+			}
+		}
+	}
+	return nullptr;
+}
+
 void NodeShape::getSize(int32_t* pX, int32_t* pY, int32_t* pZ) const
 {
 	int32_t width = 0;
