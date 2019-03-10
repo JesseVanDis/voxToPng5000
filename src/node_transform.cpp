@@ -148,9 +148,8 @@ void NodeTransformFrame::setTransformation(int pBuffer[16])
 
 NodeTransform::NodeTransform(const Context& context)
 	: Node(context)
-	, m_child(this, context)
+	, m_pChild(new NodeChild(this, context))
 {
-
 }
 
 error NodeTransform::load(Loader& loader)
@@ -161,7 +160,7 @@ error NodeTransform::load(Loader& loader)
 		return err;
 	}
 
-	err = m_child.load(loader);
+	err = m_pChild->load(loader);
 	if(err != ""s)
 	{
 		return err;

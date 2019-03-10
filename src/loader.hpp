@@ -18,7 +18,8 @@ class Loader
 		char			readNextChar();
 		vector<int32_t> readNextInt32s(size_t numInt32s);
 		int32_t			readNextInt32();
-		string			seek(const vector<string>& texts, bool putPointerAfterHit = false);
+		string			seekAny(const vector<string>& texts, bool putPointerAfterHit = false);
+		string			seek(const string& text, bool putPointerAfterHit = false);
 
 	private:
 		const vector<char>& m_data;

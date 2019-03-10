@@ -13,7 +13,7 @@ class NodeGroup : public Node
 		const NodeGroup*	toNodeGroup() const override { return this; };
 
 	private:
-		vector<NodeChild> m_children;
+		vector<shared_ptr<NodeChild> > m_children;
 };
 
 

@@ -37,10 +37,10 @@ class NodeTransform : public Node
 		NodeTransformFrame*			getFrame();
 		const NodeTransformFrame*	getFrame() const;
 
-		NodeChild	m_child;
-		int32_t 	m_reserved = ~0u;
-		int32_t 	m_layerId = ~0u;
-		int32_t 	m_numFrames = 0u;
+		shared_ptr<NodeChild>	m_pChild;
+		int32_t 				m_reserved = ~0u;
+		int32_t 				m_layerId = ~0u;
+		int32_t 				m_numFrames = 0u;
 		vector<NodeTransformFrame> m_frames;
 };
 

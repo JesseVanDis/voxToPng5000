@@ -45,8 +45,8 @@ class Scene
 
 		struct ChildToLink
 		{
-			Node* pParent;
-			NodeChild* pChild;
+			Node* pParent = nullptr;
+			NodeChild* pChild = nullptr;
 		};
 
 		vector<char> 				m_data;

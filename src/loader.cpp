@@ -50,7 +50,7 @@ int32_t	Loader::readNextInt32()
 	return readNextInt32s(1)[0];
 }
 
-string Loader::seek(const vector<string>& texts, bool putPointerAfterHit)
+string Loader::seekAny(const vector<string>& texts, bool putPointerAfterHit)
 {
 	for(; m_pointer<m_data.size(); m_pointer++)
 	{
@@ -79,6 +79,12 @@ string Loader::seek(const vector<string>& texts, bool putPointerAfterHit)
 	}
 	syncDebugDataLeft();
 	return ""s;
+}
+
+string Loader::seek(const string& text, bool putPointerAfterHit)
+{
+	vector<string> temp = {text};
+	return seekAny(temp, putPointerAfterHit);
 }
 
 void Loader::syncDebugDataLeft()

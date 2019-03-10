@@ -47,7 +47,7 @@ error Scene::load(const string& voxFilePath)
 	do
 	{
 		modelFound = false;
-		string key = loader.seek({"SIZE"}, true);
+		string key = loader.seek("SIZE", true);
 		if(key != ""s)
 		{
 			shared_ptr<Model> pModel(new Model(nextModelId++));
@@ -57,7 +57,7 @@ error Scene::load(const string& voxFilePath)
 				return err;
 			}
 
-			key = loader.seek({"XYZI"}, true);
+			key = loader.seek("XYZI", true);
 			if(key != ""s)
 			{
 				err = pModel->loadData(loader);
@@ -78,7 +78,7 @@ error Scene::load(const string& voxFilePath)
 	// palette
 	loader.reset();
 	{
-		string key = loader.seek({"RGBA"}, true);
+		string key = loader.seek("RGBA", true);
 		if(key != ""s)
 		{
 			err = m_palette.load(loader);
@@ -95,7 +95,8 @@ error Scene::load(const string& voxFilePath)
 	do
 	{
 		nodeFound = false;
-		string key = loader.seek({"nTRN", "nGRP", "nSHP"}, true);
+		const static vector<string> s_keys = {"nTRN", "nGRP", "nSHP"};
+		string key = loader.seekAny(s_keys, true);
 		if(!key.empty())
 		{
 			nodeFound = true;
@@ -141,6 +142,7 @@ error Scene::load(const string& voxFilePath)
 	{
 		for(auto&& node : m_nodes)
 		{
+			assert(link.pChild != nullptr);
 			if(node->getId() == link.pChild->getId())
 			{
 				node->setParent(link.pParent);
@@ -172,6 +174,8 @@ error Scene::load(const string& voxFilePath)
 
 void Scene::registerNodeChild(Node* pParent, NodeChild* pChild)
 {
+	assert(pParent != nullptr);
+	assert(pChild != nullptr);
 	ChildToLink link;
 	link.pParent = pParent;
 	link.pChild = pChild;
