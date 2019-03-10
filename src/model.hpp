@@ -27,7 +27,7 @@ class Model
 		const vector<Voxel>& getVoxels() const;
 
 		void 	doubleSize();
-		void 	recenterOrigins();
+		void 	recenterOrigins(); // should only be called once
 
 	private:
 		const int32_t 	m_id;

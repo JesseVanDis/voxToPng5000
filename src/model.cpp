@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include "model.hpp"
 #include "loader.hpp"
 
@@ -82,38 +83,11 @@ void Model::recenterOrigins()
 {
 	for (auto&& v : m_voxels)
 	{
+		assert(v.x >= 0); // 'recenterOrigins' should only be called once
 		v.x -= (m_width/2);
 		v.y -= (m_height/2);
 		v.z -= (m_depth/2);
 	}
-
-	/*
-	int16_t x0 = INT16_MAX;
-	int16_t y0 = INT16_MAX;
-	int16_t z0 = INT16_MAX;
-	int16_t x1 = -INT16_MAX;
-	int16_t y1 = -INT16_MAX;
-	int16_t z1 = -INT16_MAX;
-	for (auto&& v : m_voxels)
-	{
-		x0 = min(v.x, x0);
-		x1 = max(v.x, x1);
-		y0 = min(v.y, y0);
-		y1 = max(v.y, y1);
-		z0 = min(v.z, z0);
-		z1 = max(v.z, z1);
-	}
-	int16_t centerPosOffsX = ((x1-x0)+1)/2;
-	int16_t centerPosOffsY = ((y1-y0)+1)/2;
-	int16_t centerPosOffsZ = ((z1-z0)+1)/2;
-
-	for (auto&& v : m_voxels)
-	{
-		v.x -= centerPosOffsX;
-		v.y -= centerPosOffsY;
-		v.z -= centerPosOffsZ;
-	}
-	 */
 }
 
 const vector<Voxel>& Model::getVoxels() const

@@ -1,7 +1,3 @@
-//
-// Created by jesse on 04.03.19.
-//
-
 #ifndef VOXTOPNG_LOADER_HPP
 #define VOXTOPNG_LOADER_HPP
 

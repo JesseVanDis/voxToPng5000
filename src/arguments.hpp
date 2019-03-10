@@ -1,7 +1,3 @@
-//
-// Created by jesse on 07.03.19.
-//
-
 #ifndef VOXTOPNG_ARGUMENTS_HPP
 #define VOXTOPNG_ARGUMENTS_HPP
 

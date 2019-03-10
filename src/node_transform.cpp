@@ -27,12 +27,7 @@ error NodeTransformFrame::load(Loader& loader)
 	vector<int> t = m_attributes.getValues("_t"s, vector<int>{0, 0, 0});
 	setTranslation(t[0], t[1], t[2]);
 
-	// TODO: Fix rotation ( not sure if this is the correct approach so i will leave it here )
-	//vector<char> rotData = m_attributes.getData("_r"s);
-	//uint8_t rotByte = (uint8_t)(rotData.empty() ? '\0' : rotData[0]);
-
 	const uint8_t rotByte = (uint8_t)m_attributes.getValue("_r", 0);
-
 	if(rotByte != 0)
 	{
 		// row 1
@@ -58,8 +53,8 @@ error NodeTransformFrame::load(Loader& loader)
 			}
 			else
 			{
-				assert(false); // corrupt rotation ?
-				// TODO: return an error when im sure it is
+				printf("error: The rotation on one of the transformation nodes seem to be broken\n");
+				assert(false); // corrupt rotation
 			}
 		}
 
@@ -86,8 +81,8 @@ error NodeTransformFrame::load(Loader& loader)
 			}
 			else
 			{
-				assert(false); // corrupt rotation ?
-				// TODO: return an error when im sure it is
+				printf("error: The rotation on one of the transformation nodes seem to be broken\n");
+				assert(false); // corrupt rotation
 			}
 		}
 
@@ -114,7 +109,6 @@ error NodeTransformFrame::load(Loader& loader)
 			}
 		}
 	}
-
 
 	return ""s;
 }

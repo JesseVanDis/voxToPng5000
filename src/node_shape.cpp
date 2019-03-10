@@ -102,31 +102,6 @@ const Color* NodeShape::getVoxelGlobal(int x, int y, int z, int32_t* pModel) con
 			int voxelYGlobal = 0;
 			int voxelZGlobal = 0;
 
-			//if(voxel.colorIndex == 6 && x == -4 && y == 1 && z == 4)
-			//{
-			//	printf("huh");
-			//}
-			//if(voxel.colorIndex)
-
-			/*
-			Color c = getContext().pScene->lookupPaletteColor(voxel.colorIndex);
-			if(c.r == 194 && c.g == 195 && c.b == 199)
-			{
-				printf("sdfsdf\n");
-				// dont count in block, but in points
-
-				// global transform: 	 1,  1,  1
-				// local from: 			-3, -1,  1
-				// should be:			-3, -2, -1
-				// global should be:	-2, -1, 0
-
-				// global transform: 	-7, 1, 7
-				// local from: 			-3, -1, 1
-				// global from : 		-10, 0, 8
-				// global should be: 	-10, -1, 6
-			}
-			 */
-
 			transformGlobal(voxel.x, voxel.y, voxel.z, &voxelXGlobal, &voxelYGlobal, &voxelZGlobal, true);
 
 			if(voxelXGlobal == x && voxelYGlobal == y && voxelZGlobal == z)

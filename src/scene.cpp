@@ -273,14 +273,6 @@ const Color* Scene::getVoxel(int x, int y, int z) const
 	{
 		if(const NodeShape* pShape = node->toNodeShape())
 		{
-			//if(pShape->getId() == 5 && x == 4 && y == 4 && z == 4)
-			//{
-			//	printf("blie");
-			//}
-			//if(pShape->getId() == 7 && x == -4 && y == 1 && z == 4)
-			//{
-			//	printf("bla");
-			//}
 			if(const Color* pColor = pShape->getVoxelGlobal(x, y, z))
 			{
 				return pColor;
@@ -338,19 +330,6 @@ void Scene::doubleScale()
 				int globalTransformation[16];
 				pTransform->getGlobalTransformation(globalTransformation);
 
-				int globalRot[9] = {globalTransformation[0], globalTransformation[1], globalTransformation[2],
-									globalTransformation[4], globalTransformation[5], globalTransformation[6],
-									globalTransformation[8], globalTransformation[9], globalTransformation[10]};
-
-				int globalRotInv3x3[9];
-				memcpy(globalRotInv3x3, globalRot, sizeof(globalRotInv3x3));
-				inverse3By3Matrix(globalRotInv3x3);
-
-				int globalRotInv4x4[16] = {globalRotInv3x3[0], globalRotInv3x3[1], globalRotInv3x3[2], 0,
-										   globalRotInv3x3[3], globalRotInv3x3[4], globalRotInv3x3[5], 0,
-										   globalRotInv3x3[6], globalRotInv3x3[7], globalRotInv3x3[8], 0,
-										   0,				   0,				   0,				   1};
-
 				int adjustment[16];
 				memcpy(adjustment, s_identity, sizeof(adjustment));
 				if(w & 1)
@@ -366,37 +345,11 @@ void Scene::doubleScale()
 					adjustment[11] = 1;
 				}
 
-				int globalAdjustment[16];
-				MATRIXARRAY_MUL_TO(globalRotInv4x4, adjustment, globalAdjustment);
-
-				//if(pShape->getId() == 7)
-				//{
-				//	adjustment[3] = 1;
-				//	adjustment[7] = 1;
-				//	adjustment[11] = 0;
-				//}
-
-				//if(pShape->getId() == 7)
-				//{
-				//	printf("bla\n");
-
-					int nodeTransformation[16];
-					pTransform->getTransformation(nodeTransformation);
-					int multiplied[16];
-					MATRIXARRAY_MUL_TO(nodeTransformation, adjustment, multiplied);
-					//nodeTransformation[3] += 1;
-					//nodeTransformation[7] += 1;
-					//nodeTransformation[11] += 1;
-					pTransform->setTransformation(multiplied);
-				//}
-
-				//continue;
-
-				//int nodeTransformation[16];
-				//pTransform->getTransformation(nodeTransformation);
-				//int multiplied[16];
-				//MATRIXARRAY_MUL_TO(nodeTransformation, adjustment, multiplied);
-				//pTransform->setTransformation(multiplied);
+				int nodeTransformation[16];
+				pTransform->getTransformation(nodeTransformation);
+				int multiplied[16];
+				MATRIXARRAY_MUL_TO(nodeTransformation, adjustment, multiplied);
+				pTransform->setTransformation(multiplied);
 			}
 		}
 	}
@@ -409,31 +362,6 @@ void Scene::doubleScale()
 
 void Scene::recenterOrigins()
 {
-	/*
-	for(auto&& node : m_nodes)
-	{
-		if(const NodeShape* pShape = node->toNodeShape())
-		{
-			if(const NodeTransform* pParentTransformConst = node->getParent() != nullptr ? node->getParent()->toNodeTransform() : nullptr)
-			{
-				NodeTransform* pTransform = const_cast<NodeTransform*>(pParentTransformConst); // yeah ugly I know. wanna fight ?
-				int32_t w = 0;
-				int32_t h = 0;
-				int32_t d = 0;
-				pShape->getSize(&w, &h, &d);
-				int x=0;
-				int y=0;
-				int z=0;
-				pTransform->getTranslation(&x, &y, &z);
-				x -= w/2;
-				y -= h/2;
-				z -= d/2;
-				pTransform->setTranslation(x, y, z);
-			}
-		}
-	}
-	 */
-
 	for(auto&& model : m_models)
 	{
 		model->recenterOrigins();

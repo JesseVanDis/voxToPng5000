@@ -44,11 +44,4 @@ static bool getBit(uint8_t byte, int position) // position in range 0-7
 
 static int s_identity[16] = {1, 0, 0, 0,    0, 1, 0, 0,     0, 0, 1, 0,     0, 0, 0, 1};
 
-void inverse3By3Matrix(int pBuffer[9]);
-
-//static bool getBit(uint8_t byte, int position) // position in range 0-7
-//{
-//	return getBitLeftToRight(byte, 7-position);
-//}
-
 #endif //VOXTOPNG_COMMON_HPP
