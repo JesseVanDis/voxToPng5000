@@ -165,7 +165,7 @@ error Scene::load(const string& voxFilePath)
 
 	doubleScale();
 	recenterOrigins();
-	printVoxels();
+	// printVoxels(); // for debugging
 
 	return ""s;
 }
@@ -299,12 +299,15 @@ const Color& Scene::lookupPaletteColor(uint8_t colorIndex) const
 	m_palette.lookupColor(colorIndex);
 }
 
-string Scene::expandTargetFilePath(const string& targetFilePath, size_t sceneSizeX, size_t sceneSizeY, size_t sceneSizeZ) const
+string Scene::expandTargetFilePath(const string& targetFilePath, size_t sceneSizeX, size_t sceneSizeY, size_t sceneSizeZ, int scenePosX, int scenePosY, int scenePosZ) const
 {
 	string result = targetFilePath;
 	replaceAll(result, "{SIZE_X}", to_string(sceneSizeX));
 	replaceAll(result, "{SIZE_Y}", to_string(sceneSizeY));
 	replaceAll(result, "{SIZE_Z}", to_string(sceneSizeZ));
+	replaceAll(result, "{POS_X}", to_string(scenePosX));
+	replaceAll(result, "{POS_Y}", to_string(scenePosY));
+	replaceAll(result, "{POS_Z}", to_string(scenePosZ));
 	return result;
 }
 
@@ -442,7 +445,7 @@ void Scene::printVoxels()
 }
 
 
-void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneWidth, uint* pSceneHeight, uint* pSceneDepth) const
+void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneWidth, uint* pSceneHeight, uint* pSceneDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ) const
 {
 	int x0 = INT32_MAX;
 	int y0 = INT32_MAX;
@@ -512,15 +515,27 @@ void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneW
 	{
 		*pSceneDepth = (uint)d;
 	}
+	if(pScenePosX != nullptr)
+	{
+		*pScenePosX = x0/2;
+	}
+	if(pScenePosY != nullptr)
+	{
+		*pScenePosY = y0/2;
+	}
+	if(pScenePosZ != nullptr)
+	{
+		*pScenePosZ = z0/2;
+	}
 }
 
-void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth)
+void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ)
 {
 	uint w;
 	uint h;
 	uint d;
 	vector<const Color*> pData;
-	getVoxelsAtCorrectScale(&pData, &w, &h, &d);
+	getVoxelsAtCorrectScale(&pData, &w, &h, &d, pScenePosX, pScenePosY, pScenePosZ);
 
 	layers.resize(d);
 	for(uint z=0; z<d; z++)
@@ -565,7 +580,7 @@ error Scene::saveAsPngArray(const string& targetFolderPath)
 	size_t depth = 0;
 
 	vector<vector<Color>> imageLayers;
-	fillImageLayers(imageLayers, &width, &height, &depth);
+	fillImageLayers(imageLayers, &width, &height, &depth, nullptr, nullptr, nullptr);
 
 	for(size_t i=0; i<imageLayers.size(); i++)
 	{
@@ -592,21 +607,22 @@ error Scene::saveAsPngArray(const string& targetFolderPath)
 	return ""s;
 }
 
-error Scene::saveAsMergedPng(const string& targetFilePath)
+error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderColor)
 {
 	size_t width = 0;
 	size_t height = 0;
 	size_t depth = 0;
+	int posX = 0;
+	int posY = 0;
+	int posZ = 0;
 
 	vector<vector<Color>> imageLayers;
-	fillImageLayers(imageLayers, &width, &height, &depth);
+	fillImageLayers(imageLayers, &width, &height, &depth, &posX, &posY, &posZ);
 
-	string filePath = expandTargetFilePath(targetFilePath, width, height, depth);
-
-	bool drawBorder=1;
-
-	size_t imgWidth = (width * depth)+(drawBorder ? (depth-1) : 0);
-	size_t imgHeight = height;
+	const string filePath = expandTargetFilePath(targetFilePath, width, height, depth, posX, posY, posZ);
+	const bool drawBorder = pBorderColor != nullptr;
+	const size_t imgWidth = (width * depth)+(drawBorder ? (depth-1) : 0);
+	const size_t imgHeight = height;
 
 	vector<Color> data;
 	data.resize(imgWidth*imgHeight*depth);
@@ -631,10 +647,7 @@ error Scene::saveAsMergedPng(const string& targetFilePath)
 			{
 				size_t xPos = z*width;
 				size_t targetIndex = (((xPos + imgWidth*yPos)+z)-1);
-				data[targetIndex].r=0;
-				data[targetIndex].g=0;
-				data[targetIndex].b=0;
-				data[targetIndex].a=255;
+				data[targetIndex] = *pBorderColor;
 			}
 		}
 	}

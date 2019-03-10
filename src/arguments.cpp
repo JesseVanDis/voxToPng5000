@@ -1,3 +1,4 @@
+#include <sstream>
 #include "arguments.hpp"
 
 static bool endsWith(const string& text, const string& ending)
@@ -16,7 +17,7 @@ Arguments::Arguments(int argc, char **argv)
 	for(int i=0; i<argc; i++)
 	{
 		string arg = argv[i];
-		if(arg == "-i" || arg == "-o" || arg == "-s")
+		if(arg.length() > 0 && arg[0] == '-')
 		{
 			argKey = arg.substr(1);
 		}
@@ -94,6 +95,25 @@ bool Arguments::getArgument_ShouldShowHelp() const
 	return hasArgument("h");
 }
 
+const Color* Arguments::getArgument_BorderColor() const
+{
+	if(hasArgument("b"))
+	{
+		string v = getArgument("b", "ff000000"s);
+		uint32_t x;
+		std::stringstream ss;
+		ss << std::hex << v;
+		ss >> x;
+		if(v.length() == 6)
+		{
+			x = (x & 0xffffff) + 0xff000000;
+		}
+		m_cache.borderColor.fromArgb(x);
+		return &m_cache.borderColor;
+	}
+	return nullptr;
+}
+
 error Arguments::getOptionNotFoundErrorMsg(const string& optionName) const
 {
 	string errorMsg = "Option '"s;
@@ -122,5 +142,7 @@ void Arguments::printOptions() const
 	printf("  -s=SETTING           SETTING can be: 'seperate', 'merged'.");
 	printf("                          * if its 'array' then OUTPUT should be a directory.");
 	printf("                          * if its 'merged' then OUTPUT a png filepath.");
+	printf("  -b=COLORHEX          COLORHEX (argb) is the color code for the borders");
+	printf("                          * if -b is not set there will be no borders");
 	printf("  -h                   Show this help text.");
 }

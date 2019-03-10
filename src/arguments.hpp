@@ -3,6 +3,7 @@
 
 #include <map>
 #include "common.hpp"
+#include "palette.hpp"
 
 enum Setting
 {
@@ -38,12 +39,18 @@ class Arguments
 		ArgumentResult<string>	getArgument_OutputPath() const;
 		ArgumentResult<Setting>	getArgument_Setting() const;
 		bool 					getArgument_ShouldShowHelp() const;
+		const Color*			getArgument_BorderColor() const;
 
 		void 					printOptions() const;
 
 	private:
 		error					getOptionNotFoundErrorMsg(const string& optionName) const;
 		error					getValueNotValidErrorMsg(const string& optionName, const string& value) const;
+
+		mutable struct
+		{
+			Color				borderColor;
+		}					m_cache;
 
 		map<string, string> m_args;
 };

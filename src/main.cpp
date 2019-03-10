@@ -13,7 +13,7 @@ static void printHelp(const Arguments& args)
 {
 	printf("Usage: voxpng [OPTIONS]\n");
 	printf("converts .vox to png file(s)\n");
-	printf("example: voxpng -i ~/guy.vox -o ~/guyPngs\n");
+	printf("example: voxpng -i ~/guy.vox -o ~/guy.png\n");
 	printf(" ");
 	args.printOptions();
 	printf(" ");
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 				break;
 
 			case Setting_Merged:
-				err = scene.saveAsMergedPng(outputPath.result);
+				err = scene.saveAsMergedPng(outputPath.result, args.getArgument_BorderColor());
 				break;
 		}
 		if(!err.empty())
