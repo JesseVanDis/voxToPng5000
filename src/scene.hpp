@@ -35,6 +35,9 @@ class Scene
 		void 			registerShape(NodeShapeModel* pShape);
 
 	private:
+		void 			doubleScale(); // to fix pivotpoints that are not really at the center ( for example a 3,3,3 cube should have a pivot of 1.5, 1.5, 1.5 . but it has 1,1,1 and it messes with the rotation system )
+		void 			recenterOrigins(); // ""
+		void 			printVoxels();
 		void 			fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth);
 		string 			expandTargetFilePath(const string& targetFilePath, size_t sceneSizeX, size_t sceneSizeY, size_t sceneSizeZ) const;
 

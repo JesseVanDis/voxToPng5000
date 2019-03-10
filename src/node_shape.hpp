@@ -35,11 +35,12 @@ class NodeShape : public Node
 		error 				load(Loader& loader) override;
 		const NodeShape*	toNodeShape() const override { return this; };
 		const Color*		getVoxel(int x, int y, int z) const;
-		const Color*		getVoxelGlobal(int x, int y, int z) const;
+		const Color*		getVoxelGlobal(int x, int y, int z, int32_t* pModel = nullptr) const;
 		void 				getSize(int32_t* pX, int32_t* pY, int32_t* pZ) const;
+		bool 				hasModelId(int32_t id) const;
 
 	private:
-		vector<shared_ptr<NodeShapeModel>> models;
+		vector<shared_ptr<NodeShapeModel>> m_models;
 };
 
 

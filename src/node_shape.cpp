@@ -50,7 +50,7 @@ error NodeShape::load(Loader& loader)
 	}
 
 	int32_t numModels = loader.readNextInt32();
-	models.reserve((size_t)numModels);
+	m_models.reserve((size_t)numModels);
 	for(size_t i=0; i<numModels; i++)
 	{
 		shared_ptr<NodeShapeModel> model(new NodeShapeModel(getContext()));
@@ -59,7 +59,7 @@ error NodeShape::load(Loader& loader)
 		{
 			return err;
 		}
-		models.push_back(model);
+		m_models.push_back(model);
 	}
 
 	return ""s;
@@ -67,7 +67,7 @@ error NodeShape::load(Loader& loader)
 
 const Color* NodeShape::getVoxel(int x, int y, int z) const
 {
-	for(auto&& modelWeak : models)
+	for(auto&& modelWeak : m_models)
 	{
 		shared_ptr<Model> model = modelWeak->getModel().lock();
 		const vector<Voxel>& voxels = model->getVoxels();
@@ -83,11 +83,17 @@ const Color* NodeShape::getVoxel(int x, int y, int z) const
 	return nullptr;
 }
 
-const Color* NodeShape::getVoxelGlobal(int x, int y, int z) const
+const Color* NodeShape::getVoxelGlobal(int x, int y, int z, int32_t* pModel) const
 {
-	for(auto&& modelWeak : models)
+	for(auto&& modelWeak : m_models)
 	{
 		shared_ptr<Model> model = modelWeak->getModel().lock();
+
+		if(pModel != nullptr && model->getId() != *pModel)
+		{
+			continue;
+		}
+
 		const vector<Voxel>& voxels = model->getVoxels();
 
 		for(auto&& voxel : voxels)
@@ -96,12 +102,32 @@ const Color* NodeShape::getVoxelGlobal(int x, int y, int z) const
 			int voxelYGlobal = 0;
 			int voxelZGlobal = 0;
 
-			if(voxel.colorIndex == 6 && x == -4 && y == 1 && z == 4)
-			{
-				printf("huh");
-			}
+			//if(voxel.colorIndex == 6 && x == -4 && y == 1 && z == 4)
+			//{
+			//	printf("huh");
+			//}
+			//if(voxel.colorIndex)
 
-			transformGlobal(voxel.x, voxel.y, voxel.z, &voxelXGlobal, &voxelYGlobal, &voxelZGlobal);
+			/*
+			Color c = getContext().pScene->lookupPaletteColor(voxel.colorIndex);
+			if(c.r == 194 && c.g == 195 && c.b == 199)
+			{
+				printf("sdfsdf\n");
+				// dont count in block, but in points
+
+				// global transform: 	 1,  1,  1
+				// local from: 			-3, -1,  1
+				// should be:			-3, -2, -1
+				// global should be:	-2, -1, 0
+
+				// global transform: 	-7, 1, 7
+				// local from: 			-3, -1, 1
+				// global from : 		-10, 0, 8
+				// global should be: 	-10, -1, 6
+			}
+			 */
+
+			transformGlobal(voxel.x, voxel.y, voxel.z, &voxelXGlobal, &voxelYGlobal, &voxelZGlobal, true);
 
 			if(voxelXGlobal == x && voxelYGlobal == y && voxelZGlobal == z)
 			{
@@ -117,7 +143,7 @@ void NodeShape::getSize(int32_t* pX, int32_t* pY, int32_t* pZ) const
 	int32_t width = 0;
 	int32_t height = 0;
 	int32_t depth = 0;
-	for(auto&& model : models)
+	for(auto&& model : m_models)
 	{
 		int32_t modelWidth = 0;
 		int32_t modelHeight = 0;
@@ -140,4 +166,16 @@ void NodeShape::getSize(int32_t* pX, int32_t* pY, int32_t* pZ) const
 	{
 		*pZ = depth;
 	}
+}
+
+bool NodeShape::hasModelId(int32_t id) const
+{
+	for(auto&& model : m_models)
+	{
+		if(model->getId() == id)
+		{
+			return true;
+		}
+	}
+	return false;
 }

@@ -31,6 +31,16 @@ void Color::fromRgba(uint32_t rgba)
 	a = (uint8_t)(rgba & 0xff000000) >> 24;
 }
 
+uint32_t Color::toRgbaHex() const
+{
+	uint32_t result = 0u;
+	result += r << 0;
+	result += g << 8;
+	result += b << 16;
+	result += a << 24;
+	return result;
+}
+
 Palette::Palette()
 {
 	static_assert(sizeof(s_defaultPalette) == sizeof(m_colors), "(default)palette should have 256 colors. or has it changed?"); // both should have exactly Palette::NumColors colors

@@ -25,9 +25,7 @@ error NodeTransformFrame::load(Loader& loader)
 	}
 
 	vector<int> t = m_attributes.getValues("_t"s, vector<int>{0, 0, 0});
-	m_transformation[3] = t[0];
-	m_transformation[7] = t[1];
-	m_transformation[11] = t[2];
+	setTranslation(t[0], t[1], t[2]);
 
 	// TODO: Fix rotation ( not sure if this is the correct approach so i will leave it here )
 	//vector<char> rotData = m_attributes.getData("_r"s);
@@ -137,9 +135,21 @@ void NodeTransformFrame::getTranslation(int* pX, int* pY, int* pZ) const
 	}
 }
 
+void NodeTransformFrame::setTranslation(int x, int y, int z)
+{
+	m_transformation[3] = x;
+	m_transformation[7] = y;
+	m_transformation[11] = z;
+}
+
 void NodeTransformFrame::getTransformation(int pBuffer[16]) const
 {
 	memcpy(pBuffer, m_transformation, sizeof(m_transformation));
+}
+
+void NodeTransformFrame::setTransformation(int pBuffer[16])
+{
+	memcpy(m_transformation, pBuffer, sizeof(m_transformation));
 }
 
 NodeTransform::NodeTransform(const Context& context)
@@ -184,18 +194,37 @@ error NodeTransform::load(Loader& loader)
 
 void NodeTransform::getTranslation(int* pX, int* pY, int* pZ) const
 {
-	assert(m_frames.size() == 1); // something changed in the .vox standard ( should normally have exacly 1 at all times )
-	if(m_frames.size() != 1)
+	if(const NodeTransformFrame* pFrame = getFrame())
 	{
-		printf("WARNING: Found multiple transform frame attributes. positions of nodes may be incorrect");
+		pFrame->getTranslation(pX, pY, pZ);
 	}
-	if(!m_frames.empty())
+}
+
+void NodeTransform::setTranslation(int x, int y, int z)
+{
+	if(NodeTransformFrame* pFrame = getFrame())
 	{
-		m_frames[0].getTranslation(pX, pY, pZ);
+		pFrame->setTranslation(x, y, z);
 	}
 }
 
 void NodeTransform::getTransformation(int pBuffer[16]) const
+{
+	if(const NodeTransformFrame* pFrame = getFrame())
+	{
+		pFrame->getTransformation(pBuffer);
+	}
+}
+
+void NodeTransform::setTransformation(int pBuffer[16])
+{
+	if(NodeTransformFrame* pFrame = getFrame())
+	{
+		pFrame->setTransformation(pBuffer);
+	}
+}
+
+const NodeTransformFrame* NodeTransform::getFrame() const
 {
 	assert(m_frames.size() == 1); // something changed in the .vox standard ( should normally have exacly 1 at all times )
 	if(m_frames.size() != 1)
@@ -204,7 +233,14 @@ void NodeTransform::getTransformation(int pBuffer[16]) const
 	}
 	if(!m_frames.empty())
 	{
-		m_frames[0].getTransformation(pBuffer);
+		return &m_frames[0];
 	}
+	return nullptr;
+}
+
+NodeTransformFrame*	NodeTransform::getFrame()
+{
+	const NodeTransform* constThis = this;
+	return const_cast<NodeTransformFrame*>(constThis->getFrame());
 }
 

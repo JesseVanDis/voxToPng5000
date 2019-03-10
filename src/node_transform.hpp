@@ -12,7 +12,9 @@ class NodeTransformFrame
 		error 	load(Loader& loader);
 
 		void 	getTranslation(int* pX, int* pY, int* pZ) const;
+		void 	setTranslation(int x, int y, int z);
 		void 	getTransformation(int pBuffer[16]) const;
+		void 	setTransformation(int pBuffer[16]);
 
 	private:
 		Dictionary m_attributes;
@@ -27,9 +29,14 @@ class NodeTransform : public Node
 		const NodeTransform*	toNodeTransform() const override { return this; };
 
 		void 					getTranslation(int* pX, int* pY, int* pZ) const;
+		void 					setTranslation(int x, int y, int z);
 		void 					getTransformation(int pBuffer[16]) const;
+		void 					setTransformation(int pBuffer[16]);
 
 	private:
+		NodeTransformFrame*			getFrame();
+		const NodeTransformFrame*	getFrame() const;
+
 		NodeChild	m_child;
 		int32_t 	m_reserved = ~0u;
 		int32_t 	m_layerId = ~0u;

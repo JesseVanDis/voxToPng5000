@@ -34,9 +34,11 @@ class Node
 		virtual const NodeTransform*	toNodeTransform() const { return nullptr; };
 
 		void 							getGlobalPosition(int* pX, int* pY, int* pZ) const;
+		void							getGlobalTransformation(int* pBuffer) const;
+		void							getLocalTransformation(int* pBuffer) const;
 
 	protected:
-		void 							transformGlobal(int x, int y, int z, int* pX, int* pY, int* pZ) const;
+		void 							transformGlobal(int x, int y, int z, int* pX, int* pY, int* pZ, bool snapToVoxel) const;
 		void 							setParent(const Node* pParent);
 		const Node*						getParent() const;
 		const Context& 					getContext() const;

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <assert.h>
 #include <memory>
+#include <cstring>
 
 #include "scene.hpp"
 #include "stdlib.h"
@@ -162,6 +163,10 @@ error Scene::load(const string& voxFilePath)
 		}
 	}
 
+	doubleScale();
+	recenterOrigins();
+	printVoxels();
+
 	return ""s;
 }
 
@@ -199,28 +204,40 @@ void Scene::getBounds(int32_t* pX0, int32_t* pY0, int32_t* pZ0, int32_t* pX1, in
 	{
 		if(const NodeShape* pShape = node->toNodeShape())
 		{
-			int x = 0;
-			int y = 0;
-			int z = 0;
-			node->getGlobalPosition(&x, &y, &z);
-			x0 = min(x, x0);
-			x1 = max(x, x1);
-			y0 = min(y, y0);
-			y1 = max(y, y1);
-			z0 = min(z, z0);
-			z1 = max(z, z1);
-
 			int w = 0;
 			int h = 0;
 			int d = 0;
 			pShape->getSize(&w, &h, &d);
 
-			x0 = min(x + w, x0);
-			x1 = max(x + w, x1);
-			y0 = min(y + h, y0);
-			y1 = max(y + h, y1);
-			z0 = min(z + d, z0);
-			z1 = max(z + d, z1);
+			int shapeLocalX0 = -w/2;
+			int shapeLocalY0 = -h/2;
+			int shapeLocalZ0 = -d/2;
+			int shapeLocalX1 = w/2;
+			int shapeLocalY1 = h/2;
+			int shapeLocalZ1 = d/2;
+
+			int shapeGlobalX0 = 0;
+			int shapeGlobalY0 = 0;
+			int shapeGlobalZ0 = 0;
+			int shapeGlobalX1 = 0;
+			int shapeGlobalY1 = 0;
+			int shapeGlobalZ1 = 0;
+
+			pShape->transformGlobal(shapeLocalX0, shapeLocalY0, shapeLocalZ0, &shapeGlobalX0, &shapeGlobalY0, &shapeGlobalZ0, false);
+			pShape->transformGlobal(shapeLocalX1, shapeLocalY1, shapeLocalZ1, &shapeGlobalX1, &shapeGlobalY1, &shapeGlobalZ1, false);
+
+			x0 = min(shapeGlobalX0, x0);
+			x1 = max(shapeGlobalX0, x1);
+			x0 = min(shapeGlobalX1, x0);
+			x1 = max(shapeGlobalX1, x1);
+			y0 = min(shapeGlobalY0, y0);
+			y1 = max(shapeGlobalY0, y1);
+			y0 = min(shapeGlobalY1, y0);
+			y1 = max(shapeGlobalY1, y1);
+			z0 = min(shapeGlobalZ0, z0);
+			z1 = max(shapeGlobalZ0, z1);
+			z0 = min(shapeGlobalZ1, z0);
+			z1 = max(shapeGlobalZ1, z1);
 		}
 	}
 
@@ -256,14 +273,14 @@ const Color* Scene::getVoxel(int x, int y, int z) const
 	{
 		if(const NodeShape* pShape = node->toNodeShape())
 		{
-			if(pShape->getId() == 5 && x == 4 && y == 4 && z == 4)
-			{
-				printf("blie");
-			}
-			if(pShape->getId() == 7 && x == -4 && y == 1 && z == 4)
-			{
-				printf("bla");
-			}
+			//if(pShape->getId() == 5 && x == 4 && y == 4 && z == 4)
+			//{
+			//	printf("blie");
+			//}
+			//if(pShape->getId() == 7 && x == -4 && y == 1 && z == 4)
+			//{
+			//	printf("bla");
+			//}
 			if(const Color* pColor = pShape->getVoxelGlobal(x, y, z))
 			{
 				return pColor;
@@ -285,6 +302,205 @@ string Scene::expandTargetFilePath(const string& targetFilePath, size_t sceneSiz
 	replaceAll(result, "{SIZE_Y}", to_string(sceneSizeY));
 	replaceAll(result, "{SIZE_Z}", to_string(sceneSizeZ));
 	return result;
+}
+
+void Scene::doubleScale()
+{
+	// multiply positions
+	for(auto&& node : m_nodes)
+	{
+		if(const NodeTransform* pTransformConst = node->toNodeTransform())
+		{
+			NodeTransform* pTransform = const_cast<NodeTransform*>(pTransformConst); // yeah ugly I know. wanna fight ?
+			int x=0;
+			int y=0;
+			int z=0;
+			pTransform->getTranslation(&x, &y, &z);
+			pTransform->setTranslation(x*2, y*2, z*2);
+		}
+	}
+
+	// correct origins ( a cube of 3,3,3 should have origina of 1.5, 1.5, 1.5, but has 1,1,1 instead.
+	// when multiplying by 2, the size will become 6,6,6 and we can finally use integers to get the correct origin of 3,3,3
+	// ( its the whole reason why this 'doubleScale' function exists... )
+	for(auto&& node : m_nodes)
+	{
+		if (const NodeShape* pShape = node->toNodeShape())
+		{
+			if (const NodeTransform* pParentTransformConst = node->getParent() != nullptr ? node->getParent()->toNodeTransform() : nullptr)
+			{
+				NodeTransform* pTransform = const_cast<NodeTransform*>(pParentTransformConst); // yeah ugly I know. wanna fight ?
+				int32_t w = 0;
+				int32_t h = 0;
+				int32_t d = 0;
+				pShape->getSize(&w, &h, &d);
+
+				int globalTransformation[16];
+				pTransform->getGlobalTransformation(globalTransformation);
+
+				int globalRot[9] = {globalTransformation[0], globalTransformation[1], globalTransformation[2],
+									globalTransformation[4], globalTransformation[5], globalTransformation[6],
+									globalTransformation[8], globalTransformation[9], globalTransformation[10]};
+
+				int globalRotInv3x3[9];
+				memcpy(globalRotInv3x3, globalRot, sizeof(globalRotInv3x3));
+				inverse3By3Matrix(globalRotInv3x3);
+
+				int globalRotInv4x4[16] = {globalRotInv3x3[0], globalRotInv3x3[1], globalRotInv3x3[2], 0,
+										   globalRotInv3x3[3], globalRotInv3x3[4], globalRotInv3x3[5], 0,
+										   globalRotInv3x3[6], globalRotInv3x3[7], globalRotInv3x3[8], 0,
+										   0,				   0,				   0,				   1};
+
+				int adjustment[16];
+				memcpy(adjustment, s_identity, sizeof(adjustment));
+				if(w & 1)
+				{
+					adjustment[3] = 1;
+				}
+				if(h & 1)
+				{
+					adjustment[7] = 1;
+				}
+				if(d & 1)
+				{
+					adjustment[11] = 1;
+				}
+
+				int globalAdjustment[16];
+				MATRIXARRAY_MUL_TO(globalRotInv4x4, adjustment, globalAdjustment);
+
+				//if(pShape->getId() == 7)
+				//{
+				//	adjustment[3] = 1;
+				//	adjustment[7] = 1;
+				//	adjustment[11] = 0;
+				//}
+
+				//if(pShape->getId() == 7)
+				//{
+				//	printf("bla\n");
+
+					int nodeTransformation[16];
+					pTransform->getTransformation(nodeTransformation);
+					int multiplied[16];
+					MATRIXARRAY_MUL_TO(nodeTransformation, adjustment, multiplied);
+					//nodeTransformation[3] += 1;
+					//nodeTransformation[7] += 1;
+					//nodeTransformation[11] += 1;
+					pTransform->setTransformation(multiplied);
+				//}
+
+				//continue;
+
+				//int nodeTransformation[16];
+				//pTransform->getTransformation(nodeTransformation);
+				//int multiplied[16];
+				//MATRIXARRAY_MUL_TO(nodeTransformation, adjustment, multiplied);
+				//pTransform->setTransformation(multiplied);
+			}
+		}
+	}
+
+	for(auto&& model : m_models)
+	{
+		model->doubleSize();
+	}
+}
+
+void Scene::recenterOrigins()
+{
+	/*
+	for(auto&& node : m_nodes)
+	{
+		if(const NodeShape* pShape = node->toNodeShape())
+		{
+			if(const NodeTransform* pParentTransformConst = node->getParent() != nullptr ? node->getParent()->toNodeTransform() : nullptr)
+			{
+				NodeTransform* pTransform = const_cast<NodeTransform*>(pParentTransformConst); // yeah ugly I know. wanna fight ?
+				int32_t w = 0;
+				int32_t h = 0;
+				int32_t d = 0;
+				pShape->getSize(&w, &h, &d);
+				int x=0;
+				int y=0;
+				int z=0;
+				pTransform->getTranslation(&x, &y, &z);
+				x -= w/2;
+				y -= h/2;
+				z -= d/2;
+				pTransform->setTranslation(x, y, z);
+			}
+		}
+	}
+	 */
+
+	for(auto&& model : m_models)
+	{
+		model->recenterOrigins();
+	}
+}
+
+void Scene::printVoxels()
+{
+	int x0 = INT32_MAX;
+	int y0 = INT32_MAX;
+	int z0 = INT32_MAX;
+	int x1 = -INT32_MAX;
+	int y1 = -INT32_MAX;
+	int z1 = -INT32_MAX;
+
+	getBounds(&x0, &y0, &z0, &x1, &y1, &z1);
+
+	printf("===== SCENE =====\n");
+	printf("  - bounds: (%d, %d, %d) to (%d, %d, %d)\n", x0, y0, z0, x1, y1, z1);
+	printf("  - size: %d, %d, %d\n", x1-x0, y1-y0, z1-z0);
+	printf("\n");
+
+	for(auto&& node : m_nodes)
+	{
+		if(const NodeShape* pShape = node->toNodeShape())
+		{
+			for(auto&& model : m_models)
+			{
+				int32_t modelId = model->getId();
+
+				if(pShape->hasModelId(model->getId()))
+				{
+					int32_t modelWidth = 0;
+					int32_t modelHeight = 0;
+					int32_t modelDepth = 0;
+					model->getSize(&modelWidth, &modelHeight, &modelDepth);
+
+					int globalTransformation[16];
+					pShape->getGlobalTransformation(globalTransformation);
+
+
+					printf("===== SHAPE ID: %d | MODEL ID: %d =====\n", pShape->getId(), model->getId());
+					printf("  - size: %d, %d, %d\n", modelWidth, modelHeight, modelDepth);
+					printf("  - transformation: %2.1d, %2.1d, %2.1d, %2.1d \n", globalTransformation[0], globalTransformation[1], globalTransformation[2], globalTransformation[3]);
+					printf("  -                 %2.1d, %2.1d, %2.1d, %2.1d \n", globalTransformation[4], globalTransformation[5], globalTransformation[6], globalTransformation[7]);
+					printf("  -                 %2.1d, %2.1d, %2.1d, %2.1d \n", globalTransformation[8], globalTransformation[9], globalTransformation[10], globalTransformation[11]);
+					printf("  -                 %2.1d, %2.1d, %2.1d, %2.1d \n", globalTransformation[12], globalTransformation[13], globalTransformation[14], globalTransformation[15]);
+
+					printf("%3.1s| %3.1s| %3.1s| %s \n", "x", "y", "z", "col");
+
+					for(int z=z0; z<z1; z++) for(int y=y0; y<y1; y++) for(int x=x0; x<x1; x++)
+					{
+						if(const Color* pColor = pShape->getVoxelGlobal(x, y, z, &modelId))
+						{
+							printf("%3.1d, %3.1d, %3.1d, %#010x (%d, %d, %d) \n", x, y, z, pColor->toRgbaHex(), (int)pColor->r, (int)pColor->g, (int)pColor->b);
+						}
+					}
+
+					printf("\n");
+
+					break;
+				}
+			}
+		}
+	}
+
+
 }
 
 void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth)

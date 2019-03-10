@@ -15,6 +15,7 @@ struct Color
 	uint8_t a = 0;
 
 	void fromRgba(uint32_t rgba);
+	uint32_t toRgbaHex() const;
 };
 
 class Palette

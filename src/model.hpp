@@ -9,9 +9,9 @@ class Loader;
 
 struct Voxel
 {
-	int8_t x = 0;
-	int8_t y = 0;
-	int8_t z = 0;
+	int16_t x = 0;
+	int16_t y = 0;
+	int16_t z = 0;
 	uint8_t colorIndex = 0;
 };
 
@@ -23,8 +23,11 @@ class Model
 		error 	loadData(Loader& loader);
 		int32_t	getId() const;
 
-		void getSize(int32_t* pX, int32_t* pY, int32_t* pZ) const;
+		void 	getSize(int32_t* pX, int32_t* pY, int32_t* pZ) const;
 		const vector<Voxel>& getVoxels() const;
+
+		void 	doubleSize();
+		void 	recenterOrigins();
 
 	private:
 		const int32_t 	m_id;
