@@ -36,7 +36,11 @@ error Scene::load(const string& voxFilePath)
 		auto voxLength = ftell(voxHandle);
 		fseek(voxHandle, 0, SEEK_SET);
 		m_data.resize((size_t)(voxLength + 1));
-		fread(m_data.data(), (size_t)voxLength, 1, voxHandle);
+		size_t bytes = fread(m_data.data(), (size_t)voxLength, 1, voxHandle);
+		if(bytes == 0)
+		{
+			return "failed to read.vox file"s;
+		}
 		fclose(voxHandle);
 	}
 	Loader loader(m_data);
