@@ -183,16 +183,28 @@ void Scene::registerShape(NodeShapeModel* pShape)
 	m_allShapes.push_back(pShape);
 }
 
-static error savePng(const vector<Color>& pixels, size_t width, size_t height, const string& path)
+static error savePng(const vector<Color>& pixels, size_t width, size_t height, const string& path, bool flipY)
 {
-	if (!stbi_write_png(path.c_str(), (int)width, (int)height, 4, pixels.data(), (int)width * 4))
+	const vector<Color>* pPixels = &pixels;
+	vector<Color> flipped;
+	if(flipY)
+	{
+		flipped.resize(pixels.size());
+		for(size_t y=0; y<height; y++)
+		{
+			memcpy(&flipped[((height-1)-y)*width], &pixels[y*width], sizeof(Color)*width);
+		}
+		pPixels = &flipped;
+	}
+
+	if (!stbi_write_png(path.c_str(), (int)width, (int)height, 4, pPixels->data(), (int)width * 4))
 	{
 		return "Failed to write Png image"s;
 	}
 	return ""s;
 }
 
-void Scene::getBounds(int32_t* pX0, int32_t* pY0, int32_t* pZ0, int32_t* pX1, int32_t* pY1, int32_t* pZ1)
+void Scene::getBounds(int32_t* pX0, int32_t* pY0, int32_t* pZ0, int32_t* pX1, int32_t* pY1, int32_t* pZ1) const
 {
 	int x0 = INT32_MAX;
 	int y0 = INT32_MAX;
@@ -427,11 +439,10 @@ void Scene::printVoxels()
 			}
 		}
 	}
-
-
 }
 
-void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth)
+
+void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneWidth, uint* pSceneHeight, uint* pSceneDepth) const
 {
 	int x0 = INT32_MAX;
 	int y0 = INT32_MAX;
@@ -439,31 +450,95 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 	int x1 = -INT32_MAX;
 	int y1 = -INT32_MAX;
 	int z1 = -INT32_MAX;
-
 	getBounds(&x0, &y0, &z0, &x1, &y1, &z1);
 
-	const size_t width = (size_t)max(x1-x0, 0);
-	const size_t height = (size_t)max(y1-y0, 0);
-	const size_t depth = (size_t)max(z1-z0, 0);
+	int w = (x1-x0)/2;
+	int h = (y1-y0)/2;
+	int d = (z1-z0)/2;
 
-	layers.resize((size_t)max(z1-z0, 0));
-	for(int z=z0; z<z1; z++)
+	if(pVoxels != nullptr)
 	{
-		vector<Color>& layer = layers[z - z0];
-		layer.resize(width*height);
+		pVoxels->resize((((size_t)w)*((size_t)h)*((size_t)d)), nullptr);
 
-		size_t ty=0;
-		size_t tx=0;
-		for(int y=y0; y<y1; y++, ty++)
+		for(auto&& node : m_nodes)
 		{
-			tx=0;
-			for(int x=x0; x<x1; x++, tx++)
+			if(const NodeShape* pShape = node->toNodeShape())
 			{
-				size_t t = (width-(tx+1))+ty*width;
-				if(const Color* color = getVoxel(x, y, z))
+				for(auto&& model : m_models)
+				{
+					int32_t modelId = model->getId();
+					if(pShape->hasModelId(model->getId()))
+					{
+						int z=z0;
+						size_t zi=0u;
+						for(; z<z1; z+=2)
+						{
+							int y=y0;
+							size_t yi=0;
+							for(; y<y1; y+=2)
+							{
+								int x=x0;
+								size_t xi=0;
+								for(; x<x1; x+=2)
+								{
+									if(const Color* pColor = pShape->getVoxelGlobal(x, y, z, &modelId))
+									{
+										size_t t = xi+(yi*w)+(zi*h*w);
+										assert(t < pVoxels->size());
+										(*pVoxels)[t] = pColor;
+									}
+									xi++;
+								}
+								yi++;
+							}
+							zi++;
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	if(pSceneWidth != nullptr)
+	{
+		*pSceneWidth = (uint)w;
+	}
+	if(pSceneHeight != nullptr)
+	{
+		*pSceneHeight = (uint)h;
+	}
+	if(pSceneDepth != nullptr)
+	{
+		*pSceneDepth = (uint)d;
+	}
+}
+
+void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth)
+{
+	uint w;
+	uint h;
+	uint d;
+	vector<const Color*> pData;
+	getVoxelsAtCorrectScale(&pData, &w, &h, &d);
+
+	layers.resize(d);
+	for(uint z=0; z<d; z++)
+	{
+		vector<Color>& layer = layers[z];
+		layer.resize(w*h);
+
+		for(uint y=0; y<h; y++)
+		{
+			for(int x=0; x<w; x++)
+			{
+				const size_t s = (size_t)x+((size_t)y*(size_t)w)+((size_t)z*(size_t)h*(size_t)w);
+				const size_t t = x+y*w;
+				assert(s < pData.size());
+				if(pData[s] != nullptr)
 				{
 					assert(t < layer.size());
-					layer[t] = *color;
+					layer[t] = *pData[s];
 				}
 			}
 		}
@@ -471,17 +546,16 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 
 	if(pWidth != nullptr)
 	{
-		*pWidth = width;
+		*pWidth = w;
 	}
 	if(pHeight != nullptr)
 	{
-		*pHeight = height;
+		*pHeight = h;
 	}
 	if(pDepth != nullptr)
 	{
-		*pDepth = depth;
+		*pDepth = d;
 	}
-
 }
 
 error Scene::saveAsPngArray(const string& targetFolderPath)
@@ -508,7 +582,7 @@ error Scene::saveAsPngArray(const string& targetFolderPath)
 		{
 			return "cannot write an image of width or height 0."s;
 		}
-		error err = savePng(layer, width, height, outputPath);
+		error err = savePng(layer, width, height, outputPath, true);
 		if(err != ""s)
 		{
 			return err;
@@ -570,5 +644,5 @@ error Scene::saveAsMergedPng(const string& targetFilePath)
 		return "cannot write an image of width or height 0."s;
 	}
 
-	return savePng(data, imgWidth, imgHeight, filePath);
+	return savePng(data, imgWidth, imgHeight, filePath, true);
 }
