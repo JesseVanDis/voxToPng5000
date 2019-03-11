@@ -63,4 +63,4 @@ voxToPng -b ffff00ff -i voxelfile.vox -o outputfile_{SIZE_X}_{SIZE_Y}.png
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the GNU General Public License v3.0 License - see the [LICENSE](LICENSE) file for details
