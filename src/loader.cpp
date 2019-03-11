@@ -78,7 +78,7 @@ string Loader::seekAny(const vector<string>& texts, bool putPointerAfterHit)
 		}
 	}
 	syncDebugDataLeft();
-	return ""s;
+	return "";
 }
 
 string Loader::seek(const string& text, bool putPointerAfterHit)

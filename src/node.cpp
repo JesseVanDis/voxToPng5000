@@ -21,7 +21,7 @@ error Node::load(Loader& loader)
 
 	m_id = loader.readNextInt32();
 	m_dictionary.load(loader);
-	return ""s;
+	return "";
 }
 
 int32_t Node::getId() const
@@ -129,7 +129,7 @@ NodeChild::NodeChild(Node* pParent, const Context& context)
 error NodeChild::load(Loader& loader)
 {
 	m_id = loader.readNextInt32();
-	return ""s;
+	return "";
 }
 
 int32_t NodeChild::getId() const

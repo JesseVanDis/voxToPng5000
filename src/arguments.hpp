@@ -15,13 +15,13 @@ template <typename T>
 struct ArgumentResult
 {
 	ArgumentResult() = default;
-	explicit ArgumentResult(const T& res, error errorMsg = ""s)
+	explicit ArgumentResult(const T& res, error errorMsg = "")
 	{
 		result = res;
 		err = errorMsg;
 	}
-	bool hasError() const { return err != ""s; }
-	bool handleError() const { if(err != ""s) { printf("%s\n", err.c_str()); return true; } else return false; }
+	bool hasError() const { return err != ""; }
+	bool handleError() const { if(err != "") { printf("%s\n", err.c_str()); return true; } else return false; }
 
 	error err;
 	T result;

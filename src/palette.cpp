@@ -71,64 +71,10 @@ error Palette::load(Loader& loader)
 		color.b = (uint8_t)loader.readNextChar();
 		color.a = (uint8_t)loader.readNextChar();
 	}
-	return ""s;
+	return "";
 }
 
 const Color& Palette::lookupColor(uint8_t colorIndex) const
 {
 	return m_colors[colorIndex];
 }
-
-
-/*
-
-
-
-    if (voxLength < 8 ||
-        voxBuffer[0] != 'V' || voxBuffer[1] != 'O' ||
-        voxBuffer[2] != 'X' || voxBuffer[3] != ' ') {
-        die("The specified file is either corrupted, or not a .vox file");
-    }
-
-    printf("Loaded the .vox file into memory\n");
-
-
-
-    const color *voxPal = NULL;
-    for (unsigned i = 0; i < voxLength - 4; ++i) {
-        if (voxBuffer[i + 0] == 'R' && voxBuffer[i + 1] == 'G' &&
-            voxBuffer[i + 2] == 'B' && voxBuffer[i + 3] == 'A') {
-            voxPal = (color *) &voxBuffer[i + 12];
-            printf("Found palette chunk\n");
-            break;
-        }
-    }
-    if (!voxPal) {
-        printf("No palette chunk found, using the default palette\n");
-        voxPal = (color *) defaultPal;
-    }
-    else {
-        for(size_t i=0; i<255; i++)
-        {
-            union
-            {
-                __uint32_t t;
-                color c;
-            } u;
-            u.c = voxPal[i];
-
-            printf("%d: 0x%08x (%d, %d, %d)\n", (int)i, u.t, (int)u.c.r, (int)u.c.g, (int)u.c.b);
-        }
-    }
-
-
-    parse(voxLength);
-
-    int x0, y0, z0, x1, y1, z1;
-
-
-    getSceneBB(voxLength, &x0, &y0, &z0, &x1, &y1, &z1);
-    printf("scene bb: %d, %d, %d to %d, %d, %d\n", x0, y0, z0, x1, y1, z1);
-
-
- */

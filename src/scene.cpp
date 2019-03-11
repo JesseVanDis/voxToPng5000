@@ -30,7 +30,7 @@ error Scene::load(const string& voxFilePath)
 		FILE *voxHandle = fopen(voxFilePath.c_str(), "rb");
 		if (!voxHandle)
 		{
-			return "Couldn't open .vox file, are you sure it exists?"s;
+			return "Couldn't open .vox file, are you sure it exists?";
 		}
 		fseek(voxHandle, 0, SEEK_END);
 		auto voxLength = ftell(voxHandle);
@@ -39,7 +39,7 @@ error Scene::load(const string& voxFilePath)
 		size_t bytes = fread(m_data.data(), (size_t)voxLength, 1, voxHandle);
 		if(bytes == 0)
 		{
-			return "failed to read.vox file"s;
+			return "failed to read.vox file";
 		}
 		fclose(voxHandle);
 	}
@@ -52,20 +52,20 @@ error Scene::load(const string& voxFilePath)
 	{
 		modelFound = false;
 		string key = loader.seek("SIZE", true);
-		if(key != ""s)
+		if(key != "")
 		{
 			shared_ptr<Model> pModel(new Model(nextModelId++));
 			err = pModel->loadSize(loader);
-			if(err != ""s)
+			if(err != "")
 			{
 				return err;
 			}
 
 			key = loader.seek("XYZI", true);
-			if(key != ""s)
+			if(key != "")
 			{
 				err = pModel->loadData(loader);
-				if(err != ""s)
+				if(err != "")
 				{
 					return err;
 				}
@@ -74,7 +74,7 @@ error Scene::load(const string& voxFilePath)
 			}
 			else
 			{
-				return "'SIZE' token found but was not followed by a 'XYZI' tag"s;
+				return "'SIZE' token found but was not followed by a 'XYZI' tag";
 			}
 		}
 	} while(modelFound);
@@ -83,10 +83,10 @@ error Scene::load(const string& voxFilePath)
 	loader.reset();
 	{
 		string key = loader.seek("RGBA", true);
-		if(key != ""s)
+		if(key != "")
 		{
 			err = m_palette.load(loader);
-			if(err != ""s)
+			if(err != "")
 			{
 				return err;
 			}
@@ -134,7 +134,7 @@ error Scene::load(const string& voxFilePath)
 			m_nodes.push_back(pNode);
 
 			err = pNode->load(loader);
-			if(err != ""s)
+			if(err != "")
 			{
 				return err;
 			}
@@ -173,7 +173,7 @@ error Scene::load(const string& voxFilePath)
 	recenterOrigins();
 	// printVoxels(); // for debugging
 
-	return ""s;
+	return "";
 }
 
 void Scene::registerNodeChild(Node* pParent, NodeChild* pChild)
@@ -207,9 +207,9 @@ static error savePng(const vector<Color>& pixels, size_t width, size_t height, c
 
 	if (!stbi_write_png(path.c_str(), (int)width, (int)height, 4, pPixels->data(), (int)width * 4))
 	{
-		return "Failed to write Png image"s;
+		return "Failed to write Png image";
 	}
-	return ""s;
+	return "";
 }
 
 void Scene::getBounds(int32_t* pX0, int32_t* pY0, int32_t* pZ0, int32_t* pX1, int32_t* pY1, int32_t* pZ1) const
@@ -593,26 +593,26 @@ error Scene::saveAsPngArray(const string& targetFolderPath)
 	for(size_t i=0; i<imageLayers.size(); i++)
 	{
 		vector<Color>& layer = imageLayers[i];
-		string imageName = "output_"s;
+		string imageName = "output_";
 		imageName += to_string(i);
-		imageName += ".png"s;
+		imageName += ".png";
 
 		string outputPath(targetFolderPath);
-		outputPath += "/"s;
+		outputPath += "/";
 		outputPath += imageName;
 
 		if(width == 0 || height == 0)
 		{
-			return "cannot write an image of width or height 0."s;
+			return "cannot write an image of width or height 0.";
 		}
 		error err = savePng(layer, width, height, outputPath, true);
-		if(err != ""s)
+		if(err != "")
 		{
 			return err;
 		}
 	}
 
-	return ""s;
+	return "";
 }
 
 error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderColor)
@@ -662,7 +662,7 @@ error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderC
 
 	if(width == 0 || height == 0)
 	{
-		return "cannot write an image of width or height 0."s;
+		return "cannot write an image of width or height 0.";
 	}
 
 	return savePng(data, imgWidth, imgHeight, filePath, true);

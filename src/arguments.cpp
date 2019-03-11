@@ -45,9 +45,9 @@ ArgumentResult<string> Arguments::getArgument(const string& key) const
 {
 	if(hasArgument(key))
 	{
-		return ArgumentResult<string>(m_args.at(key), ""s);
+		return ArgumentResult<string>(m_args.at(key), "");
 	}
-	return ArgumentResult<string>(""s, getOptionNotFoundErrorMsg(key));
+	return ArgumentResult<string>("", getOptionNotFoundErrorMsg(key));
 }
 
 bool Arguments::hasArgument(const string& key) const
@@ -67,7 +67,7 @@ ArgumentResult<string> Arguments::getArgument_OutputPath() const
 
 ArgumentResult<Setting> Arguments::getArgument_Setting() const
 {
-	string v = getArgument("s", ""s);
+	string v = getArgument("s", "");
 	if(v.empty())
 	{
 		if(endsWith(getArgument_OutputPath().result, ".png"))
@@ -99,7 +99,7 @@ const Color* Arguments::getArgument_BorderColor() const
 {
 	if(hasArgument("b"))
 	{
-		string v = getArgument("b", "ff000000"s);
+		string v = getArgument("b", "ff000000");
 		uint32_t x;
 		std::stringstream ss;
 		ss << std::hex << v;
@@ -116,7 +116,7 @@ const Color* Arguments::getArgument_BorderColor() const
 
 error Arguments::getOptionNotFoundErrorMsg(const string& optionName) const
 {
-	string errorMsg = "Option '"s;
+	string errorMsg = "Option '";
 	errorMsg += optionName;
 	errorMsg += "' not found.";
 	return errorMsg;
@@ -124,7 +124,7 @@ error Arguments::getOptionNotFoundErrorMsg(const string& optionName) const
 
 error Arguments::getValueNotValidErrorMsg(const string& optionName, const string& value) const
 {
-	string errorMsg = "Value '"s;
+	string errorMsg = "Value '";
 	errorMsg += value;
 	errorMsg += "' is not a valid value for '";
 	errorMsg += optionName;
@@ -135,14 +135,14 @@ error Arguments::getValueNotValidErrorMsg(const string& optionName, const string
 void Arguments::printOptions() const
 {
 	printf("Options:");
-	printf("  -i=INPUTFILE         INPUTFILE is the filepath towards the .vox file");
-	printf("  -o=OUTPUT            OUTPUT is the directory/filepath where (all) the png('s) should be saved");
-	printf("                          * OUTPUT can also be formatted like this: ~/output_{SIZE_X}_{SIZE_Y}.png.");
-	printf("                            the filename will then be something like: ~/output_16_16.png.");
-	printf("  -s=SETTING           SETTING can be: 'seperate', 'merged'.");
-	printf("                          * if its 'array' then OUTPUT should be a directory.");
-	printf("                          * if its 'merged' then OUTPUT a png filepath.");
-	printf("  -b=COLORHEX          COLORHEX (argb) is the color code for the borders");
-	printf("                          * if -b is not set there will be no borders");
-	printf("  -h                   Show this help text.");
+	printf("  -i=INPUTFILE         INPUTFILE is the filepath towards the .vox file\n");
+	printf("  -o=OUTPUT            OUTPUT is the directory/filepath where (all) the png('s) should be saved" NEW_LINE);
+	printf("                          * OUTPUT can also be formatted like this: ~/output_{SIZE_X}_{SIZE_Y}.png." NEW_LINE);
+	printf("                            the filename will then be something like: ~/output_16_16.png." NEW_LINE);
+	printf("  -s=SETTING           SETTING can be: 'seperate', 'merged'." NEW_LINE);
+	printf("                          * if its 'array' then OUTPUT should be a directory.\n");
+	printf("                          * if its 'merged' then OUTPUT a png filepath.\n");
+	printf("  -b=COLORHEX          COLORHEX (argb) is the color code for the borders\n");
+	printf("                          * if -b is not set there will be no borders\n");
+	printf("  -h                   Show this help text.\n");
 }

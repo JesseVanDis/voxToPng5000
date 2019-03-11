@@ -11,7 +11,7 @@ NodeGroup::NodeGroup(const Context& context)
 error NodeGroup::load(Loader& loader)
 {
 	error err = Node::load(loader);
-	if(err != ""s)
+	if(err != "")
 	{
 		return err;
 	}
@@ -22,12 +22,12 @@ error NodeGroup::load(Loader& loader)
 	{
 		shared_ptr<NodeChild> pChild(new NodeChild(this, getContext()));
 		err = pChild->load(loader);
-		if(err != ""s)
+		if(err != "")
 		{
 			return err;
 		}
 		m_children.emplace_back(pChild);
 	}
 
-	return ""s;
+	return "";
 }

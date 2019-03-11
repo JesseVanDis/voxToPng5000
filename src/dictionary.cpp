@@ -1,4 +1,5 @@
 
+#include <string>
 #include <cstring>
 #include "dictionary.hpp"
 #include "loader.hpp"
@@ -64,7 +65,7 @@ error Dictionary::load(Loader& loader)
 		m_data[key] = valueVec;
 	}
 
-	return ""s;
+	return "";
 }
 
 bool Dictionary::hasKey(const string& key) const

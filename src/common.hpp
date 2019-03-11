@@ -2,8 +2,11 @@
 #ifndef VOXTOPNG_COMMON_HPP
 #define VOXTOPNG_COMMON_HPP
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <cstdint>
 #include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -19,6 +22,22 @@ using namespace std;
 		for(unsigned int MatARow = 0; MatARow < MatrixARows; MatARow++) for(unsigned int MatBCol = 0; MatBCol < MatrixBcolumns; MatBCol++) for(unsigned int MatACol = 0; MatACol < MatrixAcolumns; MatACol++) \
 		(MatrixOut)[MatBCol + MatARow * MatrixBcolumns] += (MatrixAIn)[MatACol + MatARow * MatrixAcolumns] * (MatrixBIn)[MatBCol + MatACol * MatrixBcolumns]; \
 		}
+		
+#ifdef _WIN32
+	#define uint uint32_t	
+	#define to_string to_string_windows
+	#define NEW_LINE "\r\n"
+	
+	template < typename T > std::string to_string_windows( const T& n )
+    {
+        std::ostringstream stm ;
+        stm << n ;
+        return stm.str() ;
+    }
+#else
+	#define NEW_LINE "\n"
+		
+#endif
 
 typedef string error;
 

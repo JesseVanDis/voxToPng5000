@@ -19,12 +19,12 @@ NodeTransformFrame::NodeTransformFrame()
 error NodeTransformFrame::load(Loader& loader)
 {
 	error err = m_attributes.load(loader);
-	if(err != ""s)
+	if(err != "")
 	{
 		return err;
 	}
 
-	vector<int> t = m_attributes.getValues("_t"s, vector<int>{0, 0, 0});
+	vector<int> t = m_attributes.getValues("_t", vector<int>{0, 0, 0});
 	setTranslation(t[0], t[1], t[2]);
 
 	const uint8_t rotByte = (uint8_t)m_attributes.getValue("_r", 0);
@@ -110,7 +110,7 @@ error NodeTransformFrame::load(Loader& loader)
 		}
 	}
 
-	return ""s;
+	return "";
 }
 
 void NodeTransformFrame::getTranslation(int* pX, int* pY, int* pZ) const
@@ -155,13 +155,13 @@ NodeTransform::NodeTransform(const Context& context)
 error NodeTransform::load(Loader& loader)
 {
 	string err = Node::load(loader);
-	if(err != ""s)
+	if(err != "")
 	{
 		return err;
 	}
 
 	err = m_pChild->load(loader);
-	if(err != ""s)
+	if(err != "")
 	{
 		return err;
 	}
@@ -175,14 +175,14 @@ error NodeTransform::load(Loader& loader)
 	{
 		NodeTransformFrame frame;
 		err = frame.load(loader);
-		if(err != ""s)
+		if(err != "")
 		{
 			return err;
 		}
 		m_frames.push_back(frame);
 	}
 
-	return ""s;
+	return "";
 }
 
 void NodeTransform::getTranslation(int* pX, int* pY, int* pZ) const

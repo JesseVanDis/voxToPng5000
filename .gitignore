@@ -31,10 +31,12 @@
 *.out
 *.app
 voxToPng
+bin
 
 # Cache stuff
 .idea
 cmake-build-debug
 src/.idea
 src/cmake-build-debug
+mingw
 

@@ -17,7 +17,7 @@ error Model::loadSize(Loader& loader)
 	m_height = loader.readNextInt32();
 	m_depth = loader.readNextInt32();
 
-	return ""s;
+	return "";
 }
 
 error Model::loadData(Loader& loader)
@@ -33,7 +33,7 @@ error Model::loadData(Loader& loader)
 		v.colorIndex = (uint8_t)loader.readNextChar();
 		v.colorIndex--;
 	}
-	return ""s;
+	return "";
 }
 
 int32_t	Model::getId() const
