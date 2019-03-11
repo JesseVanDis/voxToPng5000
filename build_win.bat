@@ -3,6 +3,7 @@
 SETLOCAL
 
 WHERE g++
+echo       - ignore this info line above me -
 IF (%ERRORLEVEL% NEQ 0) (
 
 	IF EXIST mingw (
@@ -33,7 +34,7 @@ IF "y" == "%PORTABLE%" set PATH=%PATH%;%MINGW_PATH%/bin
 IF "y" == "%PORTABLE%" set PATH=%PATH%;%MINGW_PATH%/msys/1.0/bin
 IF "y" == "%PORTABLE%" set PATH=%PATH%;%MINGW_PATH%/dll
 
-del /s /q bin
+rmdir /s/q bin
 mkdir bin
 echo building...
 cd src

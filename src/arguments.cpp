@@ -50,6 +50,20 @@ ArgumentResult<string> Arguments::getArgument(const string& key) const
 	return ArgumentResult<string>("", getOptionNotFoundErrorMsg(key));
 }
 
+void Arguments::addArgument(const string& key)
+{
+	m_args[key] = key;	
+}
+void Arguments::addArgument(const string& key, const string& value)
+{
+	m_args[key] = value;
+}
+
+void Arguments::clear()
+{
+	m_args.clear();
+}
+
 bool Arguments::hasArgument(const string& key) const
 {
 	return m_args.count(key) > 0;
@@ -134,12 +148,12 @@ error Arguments::getValueNotValidErrorMsg(const string& optionName, const string
 
 void Arguments::printOptions() const
 {
-	printf("Options:");
+	printf("Options:\n");
 	printf("  -i=INPUTFILE         INPUTFILE is the filepath towards the .vox file\n");
-	printf("  -o=OUTPUT            OUTPUT is the directory/filepath where (all) the png('s) should be saved" NEW_LINE);
-	printf("                          * OUTPUT can also be formatted like this: ~/output_{SIZE_X}_{SIZE_Y}.png." NEW_LINE);
-	printf("                            the filename will then be something like: ~/output_16_16.png." NEW_LINE);
-	printf("  -s=SETTING           SETTING can be: 'seperate', 'merged'." NEW_LINE);
+	printf("  -o=OUTPUT            OUTPUT is the directory/filepath where (all) the png('s) should be saved\n");
+	printf("                          * OUTPUT can also be formatted like this: ~/output_{SIZE_X}_{SIZE_Y}.png.\n");
+	printf("                            the filename will then be something like: ~/output_16_16.png.\n");
+	printf("  -s=SETTING           SETTING can be: 'seperate', 'merged'.\n");
 	printf("                          * if its 'array' then OUTPUT should be a directory.\n");
 	printf("                          * if its 'merged' then OUTPUT a png filepath.\n");
 	printf("  -b=COLORHEX          COLORHEX (argb) is the color code for the borders\n");

@@ -34,6 +34,9 @@ class Arguments
 		string 					getArgument(const string& key, const string& defaultValue) const;
 		ArgumentResult<string> 	getArgument(const string& key) const;
 		bool 					hasArgument(const string& key) const;
+		void					addArgument(const string& key);
+		void					addArgument(const string& key, const string& value);
+		void					clear();
 
 		ArgumentResult<string>	getArgument_InputPath() const;
 		ArgumentResult<string>	getArgument_OutputPath() const;

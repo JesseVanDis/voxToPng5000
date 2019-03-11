@@ -1,5 +1,11 @@
 #include <iostream>
 #include <map>
+#include <stdio.h>
+#include <string.h>
+
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 #include "stdlib.h"
 #include "stdio.h"
@@ -13,18 +19,52 @@ static void printHelp(const Arguments& args)
 {
 	printf("Usage: voxpng [OPTIONS]\n");
 	printf("converts .vox to png file(s)\n");
-	printf("example: voxpng -i ~/guy.vox -o ~/guy.png\n");
-	printf(" ");
+	#ifdef _WIN32
+		printf("example: voxpng -i C:/guy.vox -o C:/guy.png\n");
+	#else		
+		printf("example: voxpng -i ~/guy.vox -o ~/guy.png\n");
+	#endif
+	printf("\n");
 	args.printOptions();
-	printf(" ");
-	printf("if any error occurs, the exit status is 2.");
+	printf("\n");
+	printf("if any error occurs, the exit status is 2.\n");
 }
 
 int main(int argc, char **argv)
 {
-	Arguments args(argc, argv);
+	bool byDragAndDrop = false;
+	Arguments args(argc, argv);	
+	if(argc == 2)
+	{
+		char outputFilePath[512] = "";
+		strcpy(outputFilePath, argv[1]);
+		size_t len = strlen(outputFilePath);
+		if(len > 3)
+		{
+			outputFilePath[len-3] = 'p';
+			outputFilePath[len-2] = 'n';
+			outputFilePath[len-1] = 'g';
+		}
+		args.clear();
+		args.addArgument("i", argv[1]);
+		args.addArgument("o", outputFilePath);
+		byDragAndDrop = true;
+	}
+	
+	#ifdef _WIN32
+		if(argc == 1) 
+		{
+			printf("\n");
+			printf(" =======  .VOX to .PNG converter 5000! ======= \n");
+			printf("Usage: Drag & Drop the .vox file in the .exe file\n");
+			printf("or call this from the command line with the '-h' option for more options\n");
+			printf("Application will close in 5 seconds\n");
+			printf("\n");
+			SLEEP(5000);
+		}
+	#endif
 
-	if(argc < 3 || args.getArgument_ShouldShowHelp())
+	if(!byDragAndDrop && (argc < 3 || args.getArgument_ShouldShowHelp()))
 	{
 		printHelp(args);
 		return 0;
@@ -36,14 +76,22 @@ int main(int argc, char **argv)
 		auto setting = args.getArgument_Setting();
 		if(voxPath.handleError() || outputPath.handleError() || setting.handleError())
 		{
+			if(byDragAndDrop)
+			{
+				SLEEP(5000);
+			}
 			return 2;
 		}
-
+		
 		Scene scene;
 		error err = scene.load(voxPath.result);
 		if(!err.empty())
 		{
 			printf("%s\n", err.c_str());
+			if(byDragAndDrop)
+			{
+				SLEEP(5000);
+			}
 			return 2;
 		}
 
@@ -60,6 +108,10 @@ int main(int argc, char **argv)
 		if(!err.empty())
 		{
 			printf("%s\n", err.c_str());
+			if(byDragAndDrop)
+			{
+				SLEEP(5000);
+			}
 			return 2;
 		}
 

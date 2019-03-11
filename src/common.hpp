@@ -26,8 +26,8 @@ using namespace std;
 #ifdef _WIN32
 	#define uint uint32_t	
 	#define to_string to_string_windows
-	#define NEW_LINE "\r\n"
-	
+	#define SLEEP Sleep
+		
 	template < typename T > std::string to_string_windows( const T& n )
     {
         std::ostringstream stm ;
@@ -35,8 +35,7 @@ using namespace std;
         return stm.str() ;
     }
 #else
-	#define NEW_LINE "\n"
-		
+	#define SLEEP sleep
 #endif
 
 typedef string error;
