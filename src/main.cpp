@@ -5,6 +5,8 @@
 
 #ifdef _WIN32
 #include <Windows.h>
+#else
+#include <zconf.h>
 #endif
 
 #include "stdlib.h"
