@@ -179,6 +179,8 @@ void Arguments::printOptions() const
 	printf("  -o=OUTPUT            OUTPUT is the directory/filepath where (all) the png('s) should be saved\n");
 	printf("                          * OUTPUT can also be formatted like this: ~/output_{SIZE_X}_{SIZE_Y}.png.\n");
 	printf("                            the filename will then be something like: ~/output_16_16.png.\n");
+	printf("                            Formatting options are:\n");
+	printf("                              SIZE_X, SIZE_Y, SIZE_Z, POS_X, POS_Y, POS_Z\n");
 	printf("  -s=SETTING           SETTING can be: 'seperate', 'merged'.\n");
 	printf("                          * if its 'array' then OUTPUT should be a directory.\n");
 	printf("                          * if its 'merged' then OUTPUT a png filepath.\n");
