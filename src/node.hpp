@@ -35,6 +35,8 @@ class Node
 
 		void							getGlobalTransformation(int* pBuffer) const;
 
+		virtual void 					makeDirty();
+
 	protected:
 		void 							transformGlobal(int x, int y, int z, int* pX, int* pY, int* pZ, bool snapToVoxel) const;
 		void 							setParent(const Node* pParent);
@@ -48,6 +50,12 @@ class Node
 		Context 	m_context;
 		int32_t 	m_id = ~0u;
 		Dictionary 	m_dictionary;
+
+		struct
+		{
+			bool		isDirty;
+			float 		globalTransformation[16];
+		}	mutable m_cache;
 };
 
 class NodeChild

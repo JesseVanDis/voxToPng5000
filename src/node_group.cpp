@@ -31,3 +31,13 @@ error NodeGroup::load(Loader& loader)
 
 	return "";
 }
+
+void NodeGroup::makeDirty()
+{
+	Node::makeDirty();
+	for(auto&& child : m_children)
+	{
+		child->getNode().lock()->makeDirty();
+	}
+}
+

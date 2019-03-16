@@ -3,7 +3,7 @@ project(voxToPng)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_definitions (-D_DEBUG)
+# add_definitions (-D_DEBUG)
 
 # set( CMAKE_VERBOSE_MAKEFILE on )
 

@@ -425,7 +425,6 @@ void Scene::printVoxels()
 					int globalTransformation[16];
 					pShape->getGlobalTransformation(globalTransformation);
 
-
 					printf("===== SHAPE ID: %d | MODEL ID: %d =====\n", pShape->getId(), model->getId());
 					printf("  - size: %d, %d, %d\n", modelWidth, modelHeight, modelDepth);
 					printf("  - transformation: %2.1d, %2.1d, %2.1d, %2.1d \n", globalTransformation[0], globalTransformation[1], globalTransformation[2], globalTransformation[3]);
@@ -452,8 +451,8 @@ void Scene::printVoxels()
 	}
 }
 
-
-void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneWidth, uint* pSceneHeight, uint* pSceneDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ) const
+/*
+ void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneWidth, uint* pSceneHeight, uint* pSceneDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ) const
 {
 	int x0 = INT32_MAX;
 	int y0 = INT32_MAX;
@@ -491,6 +490,104 @@ void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneW
 								int x=x0;
 								size_t xi=0;
 								for(; x<x1; x+=2)
+								{
+									if(const Color* pColor = pShape->getVoxelGlobal(x, y, z, &modelId))
+									{
+										size_t t = xi+(yi*w)+(zi*h*w);
+										assert(t < pVoxels->size());
+										(*pVoxels)[t] = pColor;
+									}
+									xi++;
+								}
+								yi++;
+							}
+							zi++;
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	if(pSceneWidth != nullptr)
+	{
+		*pSceneWidth = (uint)w;
+	}
+	if(pSceneHeight != nullptr)
+	{
+		*pSceneHeight = (uint)h;
+	}
+	if(pSceneDepth != nullptr)
+	{
+		*pSceneDepth = (uint)d;
+	}
+	if(pScenePosX != nullptr)
+	{
+		*pScenePosX = x0/2;
+	}
+	if(pScenePosY != nullptr)
+	{
+		*pScenePosY = y0/2;
+	}
+	if(pScenePosZ != nullptr)
+	{
+		*pScenePosZ = z0/2;
+	}
+}
+ */
+
+void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneWidth, uint* pSceneHeight, uint* pSceneDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ) const
+{
+	int x0 = INT32_MAX;
+	int y0 = INT32_MAX;
+	int z0 = INT32_MAX;
+	int x1 = -INT32_MAX;
+	int y1 = -INT32_MAX;
+	int z1 = -INT32_MAX;
+	getBounds(&x0, &y0, &z0, &x1, &y1, &z1);
+
+	int w = (x1-x0)/2;
+	int h = (y1-y0)/2;
+	int d = (z1-z0)/2;
+
+	if(pVoxels != nullptr)
+	{
+		pVoxels->resize((((size_t)w)*((size_t)h)*((size_t)d)), nullptr);
+
+		for(size_t nodeIndex = 0; nodeIndex < m_nodes.size(); nodeIndex++)
+		{
+			printf("nodeIndex: %u/%u\n", (uint)nodeIndex, (uint)m_nodes.size());
+			auto& node = m_nodes[nodeIndex];
+			if(const NodeShape* pShape = node->toNodeShape())
+			{
+				int x0l = INT32_MAX;
+				int y0l = INT32_MAX;
+				int z0l = INT32_MAX;
+				int x1l = -INT32_MAX;
+				int y1l = -INT32_MAX;
+				int z1l = -INT32_MAX;
+				pShape->getGlobalBounds(&x0l, &y0l, &z0l, &x1l, &y1l, &z1l);
+
+				for(auto&& model : m_models)
+				{
+					int32_t modelId = model->getId();
+					if(pShape->hasModelId(model->getId()))
+					{
+						int z=z0l;
+						assert(z0l-z0 >= 0);
+						size_t zi=(z0l-z0)/2;
+						for(; z<z1l; z+=2)
+						{
+							int y=y0l;
+							assert(y0l-y0 >= 0);
+							size_t yi=(y0l-y0)/2;
+							for(; y<y1l; y+=2)
+							{
+								int x=x0l;
+								assert(x0l-x0 >= 0);
+								size_t xi=(x0l-x0)/2;
+								for(; x<x1l; x+=2)
 								{
 									if(const Color* pColor = pShape->getVoxelGlobal(x, y, z, &modelId))
 									{
@@ -632,8 +729,17 @@ error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderC
 	const size_t imgWidth = (width * depth)+(drawBorder ? (depth-1) : 0);
 	const size_t imgHeight = height;
 
+	const size_t numPixels = imgWidth*imgHeight;
+
 	vector<Color> data;
-	data.resize(imgWidth*imgHeight*depth);
+	if(numPixels >= data.max_size())
+	{
+		char error[1024];
+		sprintf(error, "cannot create an image of size: %u, %u. its too big. max amount of pixels is: %u\n", (uint)imgWidth, (uint)imgHeight, (uint)(data.max_size()));
+		return string(error);
+	}
+
+	data.resize(numPixels);
 
 	for(size_t z=0; z<imageLayers.size(); z++)
 	{

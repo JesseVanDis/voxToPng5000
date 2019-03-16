@@ -29,7 +29,10 @@ vector<char> Loader::readNextChars(size_t numBytes)
 
 char Loader::readNextChar()
 {
-	return readNextChars(1)[0];
+	char c = m_data[m_pointer];
+	m_pointer+=1;
+	syncDebugDataLeft();
+	return c;
 }
 
 vector<int32_t> Loader::readNextInt32s(size_t numInt32s)

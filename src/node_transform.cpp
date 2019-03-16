@@ -215,6 +215,13 @@ void NodeTransform::setTransformation(int pBuffer[16])
 	{
 		pFrame->setTransformation(pBuffer);
 	}
+	makeDirty();
+}
+
+void NodeTransform::makeDirty()
+{
+	Node::makeDirty();
+	m_pChild->getNode().lock()->makeDirty();
 }
 
 const NodeTransformFrame* NodeTransform::getFrame() const

@@ -33,6 +33,8 @@ class NodeTransform : public Node
 		void 					getTransformation(int pBuffer[16]) const;
 		void 					setTransformation(int pBuffer[16]);
 
+		void 					makeDirty() override;
+
 	private:
 		NodeTransformFrame*			getFrame();
 		const NodeTransformFrame*	getFrame() const;

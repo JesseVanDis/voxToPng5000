@@ -21,6 +21,10 @@ error Node::load(Loader& loader)
 
 	m_id = loader.readNextInt32();
 	m_dictionary.load(loader);
+
+	memset(&m_cache, 0, sizeof(m_cache));
+	m_cache.isDirty = true;
+
 	return "";
 }
 
@@ -118,6 +122,11 @@ const Node* Node::getParent() const
 const Context& Node::getContext() const
 {
 	return m_context;
+}
+
+void Node::makeDirty()
+{
+	m_cache.isDirty = true;
 }
 
 NodeChild::NodeChild(Node* pParent, const Context& context)

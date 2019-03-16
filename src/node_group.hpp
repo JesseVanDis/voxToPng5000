@@ -11,6 +11,9 @@ class NodeGroup : public Node
 		explicit NodeGroup(const Context& context);
 		error 				load(Loader& loader) override;
 		const NodeGroup*	toNodeGroup() const override { return this; };
+		void 				makeDirty() override;
+
+	protected:
 
 	private:
 		vector<shared_ptr<NodeChild> > m_children;
