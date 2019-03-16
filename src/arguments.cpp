@@ -19,7 +19,15 @@ Arguments::Arguments(int argc, char **argv)
 		string arg = argv[i];
 		if(arg.length() > 0 && arg[0] == '-')
 		{
-			argKey = arg.substr(1);
+			string val = arg.substr(1);
+			if(argumentWithoutValue(val))
+			{
+				m_args[val] = val;
+			}
+			else
+			{
+				argKey = val;
+			}
 		}
 		else if(!argKey.empty())
 		{
@@ -128,6 +136,11 @@ const Color* Arguments::getArgument_BorderColor() const
 	return nullptr;
 }
 
+bool Arguments::getArgument_Verbose() const
+{
+	return hasArgument("v");
+}
+
 error Arguments::getOptionNotFoundErrorMsg(const string& optionName) const
 {
 	string errorMsg = "Option '";
@@ -146,6 +159,19 @@ error Arguments::getValueNotValidErrorMsg(const string& optionName, const string
 	return errorMsg;
 }
 
+bool Arguments::argumentWithoutValue(const string& key) const
+{
+	vector<string> keysWithoutValue = {"v", "h"};
+	for(auto&& v : keysWithoutValue)
+	{
+		if(key == v)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void Arguments::printOptions() const
 {
 	printf("Options:\n");
@@ -158,5 +184,6 @@ void Arguments::printOptions() const
 	printf("                          * if its 'merged' then OUTPUT a png filepath.\n");
 	printf("  -b=COLORHEX          COLORHEX (argb) is the color code for the borders\n");
 	printf("                          * if -b is not set there will be no borders\n");
+	printf("  -v                   Talk a lot.\n");
 	printf("  -h                   Show this help text.\n");
 }

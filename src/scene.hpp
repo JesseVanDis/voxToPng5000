@@ -21,7 +21,7 @@ class Scene
 	friend class NodeShapeModel;
 
 	public:
-		Scene();
+		Scene(bool verboseEnabled = false);
 		error 			load(const string& voxFilePath);
 		error 			saveAsPngArray(const string& targetFolderPath);
 		error 			saveAsMergedPng(const string& targetFilePath, const Color* pBorderColor = nullptr);
@@ -57,6 +57,8 @@ class Scene
 
 		vector<ChildToLink> 		m_allNodeChildren;
 		vector<NodeShapeModel*> 	m_allShapes;
+
+		bool 						m_verboseEnabled;
 };
 
 

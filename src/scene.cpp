@@ -16,11 +16,19 @@
 
 // https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
 
-Scene::Scene() = default;
+Scene::Scene(bool verboseEnabled)
+{
+	m_verboseEnabled = verboseEnabled;
+}
 
 error Scene::load(const string& voxFilePath)
 {
 	error err;
+
+	if(m_verboseEnabled)
+	{
+		printf("loading: %s\n", voxFilePath.c_str());
+	}
 
 	Context context;
 	context.pScene = this;
@@ -52,20 +60,25 @@ error Scene::load(const string& voxFilePath)
 	{
 		modelFound = false;
 		string key = loader.seek("SIZE", true);
-		if(key != "")
+		if(!key.empty())
 		{
 			shared_ptr<Model> pModel(new Model(nextModelId++));
 			err = pModel->loadSize(loader);
-			if(err != "")
+			if(!err.empty())
 			{
 				return err;
 			}
 
 			key = loader.seek("XYZI", true);
-			if(key != "")
+			if(!key.empty())
 			{
+				if(m_verboseEnabled)
+				{
+					printf("loading model '%d'\n", nextModelId);
+				}
+
 				err = pModel->loadData(loader);
-				if(err != "")
+				if(!err.empty())
 				{
 					return err;
 				}
@@ -82,6 +95,10 @@ error Scene::load(const string& voxFilePath)
 	// palette
 	loader.reset();
 	{
+		if(m_verboseEnabled)
+		{
+			printf("loading palette\n");
+		}
 		string key = loader.seek("RGBA", true);
 		if(key != "")
 		{
@@ -95,6 +112,10 @@ error Scene::load(const string& voxFilePath)
 
 	// nodes
 	loader.reset();
+	if(m_verboseEnabled)
+	{
+		printf("loading nodes\n");
+	}
 	bool nodeFound;
 	do
 	{
@@ -134,7 +155,7 @@ error Scene::load(const string& voxFilePath)
 			m_nodes.push_back(pNode);
 
 			err = pNode->load(loader);
-			if(err != "")
+			if(!err.empty())
 			{
 				return err;
 			}
@@ -169,6 +190,10 @@ error Scene::load(const string& voxFilePath)
 		}
 	}
 
+	if(m_verboseEnabled)
+	{
+		printf("handling transformations of models/nodes\n");
+	}
 	doubleScale();
 	recenterOrigins();
 	// printVoxels(); // for debugging
@@ -350,8 +375,12 @@ void Scene::doubleScale()
 				int32_t d = 0;
 				pShape->getSize(&w, &h, &d);
 
+				const float* globalTransformationF = pTransform->getGlobalTransformation();
 				int globalTransformation[16];
-				pTransform->getGlobalTransformation(globalTransformation);
+				for(size_t i=0; i<16; i++)
+				{
+					globalTransformation[i] = (int)globalTransformationF[i];
+				}
 
 				int adjustment[16];
 				memcpy(adjustment, s_identity, sizeof(adjustment));
@@ -422,8 +451,12 @@ void Scene::printVoxels()
 					int32_t modelDepth = 0;
 					model->getSize(&modelWidth, &modelHeight, &modelDepth);
 
+					const float* globalTransformationF = pShape->getGlobalTransformation();
 					int globalTransformation[16];
-					pShape->getGlobalTransformation(globalTransformation);
+					for(size_t i=0; i<16; i++)
+					{
+						globalTransformation[i] = (int)globalTransformationF[i];
+					}
 
 					printf("===== SHAPE ID: %d | MODEL ID: %d =====\n", pShape->getId(), model->getId());
 					printf("  - size: %d, %d, %d\n", modelWidth, modelHeight, modelDepth);
@@ -451,91 +484,6 @@ void Scene::printVoxels()
 	}
 }
 
-/*
- void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneWidth, uint* pSceneHeight, uint* pSceneDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ) const
-{
-	int x0 = INT32_MAX;
-	int y0 = INT32_MAX;
-	int z0 = INT32_MAX;
-	int x1 = -INT32_MAX;
-	int y1 = -INT32_MAX;
-	int z1 = -INT32_MAX;
-	getBounds(&x0, &y0, &z0, &x1, &y1, &z1);
-
-	int w = (x1-x0)/2;
-	int h = (y1-y0)/2;
-	int d = (z1-z0)/2;
-
-	if(pVoxels != nullptr)
-	{
-		pVoxels->resize((((size_t)w)*((size_t)h)*((size_t)d)), nullptr);
-
-		for(auto&& node : m_nodes)
-		{
-			if(const NodeShape* pShape = node->toNodeShape())
-			{
-				for(auto&& model : m_models)
-				{
-					int32_t modelId = model->getId();
-					if(pShape->hasModelId(model->getId()))
-					{
-						int z=z0;
-						size_t zi=0u;
-						for(; z<z1; z+=2)
-						{
-							int y=y0;
-							size_t yi=0;
-							for(; y<y1; y+=2)
-							{
-								int x=x0;
-								size_t xi=0;
-								for(; x<x1; x+=2)
-								{
-									if(const Color* pColor = pShape->getVoxelGlobal(x, y, z, &modelId))
-									{
-										size_t t = xi+(yi*w)+(zi*h*w);
-										assert(t < pVoxels->size());
-										(*pVoxels)[t] = pColor;
-									}
-									xi++;
-								}
-								yi++;
-							}
-							zi++;
-						}
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	if(pSceneWidth != nullptr)
-	{
-		*pSceneWidth = (uint)w;
-	}
-	if(pSceneHeight != nullptr)
-	{
-		*pSceneHeight = (uint)h;
-	}
-	if(pSceneDepth != nullptr)
-	{
-		*pSceneDepth = (uint)d;
-	}
-	if(pScenePosX != nullptr)
-	{
-		*pScenePosX = x0/2;
-	}
-	if(pScenePosY != nullptr)
-	{
-		*pScenePosY = y0/2;
-	}
-	if(pScenePosZ != nullptr)
-	{
-		*pScenePosZ = z0/2;
-	}
-}
- */
 
 void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneWidth, uint* pSceneHeight, uint* pSceneDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ) const
 {
@@ -551,16 +499,37 @@ void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneW
 	int h = (y1-y0)/2;
 	int d = (z1-z0)/2;
 
+	uint numNodeShapes = 0u;
+	for(auto&& node : m_nodes)
+	{
+		if (node->toNodeShape() != nullptr)
+		{
+			numNodeShapes++;
+		}
+	}
+
+	uint shapeNodeIndex = 0;
 	if(pVoxels != nullptr)
 	{
 		pVoxels->resize((((size_t)w)*((size_t)h)*((size_t)d)), nullptr);
 
 		for(size_t nodeIndex = 0; nodeIndex < m_nodes.size(); nodeIndex++)
 		{
-			printf("nodeIndex: %u/%u\n", (uint)nodeIndex, (uint)m_nodes.size());
 			auto& node = m_nodes[nodeIndex];
 			if(const NodeShape* pShape = node->toNodeShape())
 			{
+				if(m_verboseEnabled)
+				{
+					string name = node->getName(true);
+					if(name.empty())
+					{
+						printf("(%u/%u) loading voxels of nodeId: %d\n", shapeNodeIndex, numNodeShapes, node->getId());
+					}
+					else
+					{
+						printf("(%u/%u) loading voxels of nodeId: %d (%s)\n", shapeNodeIndex, numNodeShapes, node->getId(), name.c_str());
+					}
+				}
 				int x0l = INT32_MAX;
 				int y0l = INT32_MAX;
 				int z0l = INT32_MAX;
@@ -604,6 +573,7 @@ void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneW
 						break;
 					}
 				}
+				shapeNodeIndex++;
 			}
 		}
 	}
@@ -680,6 +650,11 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 
 error Scene::saveAsPngArray(const string& targetFolderPath)
 {
+	if(m_verboseEnabled)
+	{
+		printf("saving as multiple png's to: %s\n", targetFolderPath.c_str());
+	}
+
 	size_t width = 0;
 	size_t height = 0;
 	size_t depth = 0;
@@ -730,6 +705,11 @@ error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderC
 	const size_t imgHeight = height;
 
 	const size_t numPixels = imgWidth*imgHeight;
+
+	if(m_verboseEnabled)
+	{
+		printf("saving as single png to: %s. (canvas size: %u, %u)\n", filePath.c_str(), (uint)imgWidth, (uint)imgHeight);
+	}
 
 	vector<Color> data;
 	if(numPixels >= data.max_size())

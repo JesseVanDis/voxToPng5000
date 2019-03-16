@@ -28,12 +28,13 @@ class Node
 		explicit Node(const Context& context);
 		virtual error 					load(Loader& loader);
 		int32_t 						getId() const;
+		string							getName(bool checkParentsAsWell) const;
 
 		virtual const NodeGroup*		toNodeGroup() const { return nullptr; };
 		virtual const NodeShape*		toNodeShape() const { return nullptr; };
 		virtual const NodeTransform*	toNodeTransform() const { return nullptr; };
 
-		void							getGlobalTransformation(int* pBuffer) const;
+		const float*					getGlobalTransformation() const;
 
 		virtual void 					makeDirty();
 

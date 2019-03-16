@@ -16,13 +16,6 @@ using namespace std;
 		(_To)[8 ] =	(_MatA)[8 ]*(_MatB)[0 ] + (_MatA)[9 ]*(_MatB)[4 ] + (_MatA)[10]*(_MatB)[8 ] + (_MatA)[11]*(_MatB)[12]; (_To)[9 ] = (_MatA)[8 ]*(_MatB)[1 ] + (_MatA)[9 ]*(_MatB)[5 ] + (_MatA)[10]*(_MatB)[9 ] + (_MatA)[11]*(_MatB)[13]; (_To)[10] = (_MatA)[8 ]*(_MatB)[2 ] + (_MatA)[9 ]*(_MatB)[6 ] + (_MatA)[10]*(_MatB)[10] + (_MatA)[11]*(_MatB)[14]; (_To)[11] = (_MatA)[8 ]*(_MatB)[3 ] + (_MatA)[9 ]*(_MatB)[7 ] + (_MatA)[10]*(_MatB)[11] + (_MatA)[11]*(_MatB)[15]; \
 		(_To)[12] = (_MatA)[12]*(_MatB)[0 ] + (_MatA)[13]*(_MatB)[4 ] + (_MatA)[14]*(_MatB)[8 ] + (_MatA)[15]*(_MatB)[12]; (_To)[13] = (_MatA)[12]*(_MatB)[1 ] + (_MatA)[13]*(_MatB)[5 ] + (_MatA)[14]*(_MatB)[9 ] + (_MatA)[15]*(_MatB)[13]; (_To)[14] = (_MatA)[12]*(_MatB)[2 ] + (_MatA)[13]*(_MatB)[6 ] + (_MatA)[14]*(_MatB)[10] + (_MatA)[15]*(_MatB)[14]; (_To)[15] = (_MatA)[12]*(_MatB)[3 ] + (_MatA)[13]*(_MatB)[7 ] + (_MatA)[14]*(_MatB)[11] + (_MatA)[15]*(_MatB)[15]; }
 
-#define MATRIX_MUL_TO(MatrixAIn, MatrixARows, MatrixAcolumns, MatrixBIn, MatrixBRows, MatrixBcolumns, MatrixOut){ \
-		static_assert(MatrixAcolumns == MatrixBRows, "number of rows must equal the number of columns of this matrix"); \
-		memset((MatrixOut), 0, sizeof(MatrixOut[0]) * MatrixARows * MatrixBcolumns); \
-		for(unsigned int MatARow = 0; MatARow < MatrixARows; MatARow++) for(unsigned int MatBCol = 0; MatBCol < MatrixBcolumns; MatBCol++) for(unsigned int MatACol = 0; MatACol < MatrixAcolumns; MatACol++) \
-		(MatrixOut)[MatBCol + MatARow * MatrixBcolumns] += (MatrixAIn)[MatACol + MatARow * MatrixAcolumns] * (MatrixBIn)[MatBCol + MatACol * MatrixBcolumns]; \
-		}
-		
 #ifdef _WIN32
 	#define uint uint32_t	
 	#define to_string to_string_windows

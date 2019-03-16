@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 			return 2;
 		}
 		
-		Scene scene;
+		Scene scene(args.getArgument_Verbose());
 		error err = scene.load(voxPath.result);
 		if(!err.empty())
 		{
@@ -117,6 +117,10 @@ int main(int argc, char **argv)
 			return 2;
 		}
 
+		if(args.getArgument_Verbose())
+		{
+			printf("done");
+		}
 		return 0;
 	}
 }

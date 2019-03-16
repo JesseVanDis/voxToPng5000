@@ -43,6 +43,9 @@ class Arguments
 		ArgumentResult<Setting>	getArgument_Setting() const;
 		bool 					getArgument_ShouldShowHelp() const;
 		const Color*			getArgument_BorderColor() const;
+		bool 					getArgument_Verbose() const;
+
+		bool					argumentWithoutValue(const string& key) const;
 
 		void 					printOptions() const;
 

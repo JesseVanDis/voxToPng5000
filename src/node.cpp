@@ -33,33 +33,50 @@ int32_t Node::getId() const
 	return m_id;
 }
 
-void Node::getGlobalTransformation(int* pBuffer) const
+string Node::getName(bool checkParentsAsWell) const
 {
-	int current[16];
-	memcpy(current, s_identity, sizeof(current));
-
-	vector<const Node*> hierarchy = getHierarchy();
-	for(size_t i=0; i<hierarchy.size(); i++)
+	string name = m_dictionary.getValue("_name", string(""));
+	if(name.empty() && checkParentsAsWell && m_pParent != nullptr)
 	{
-		if(const NodeTransform* pTransform = hierarchy[i]->toNodeTransform())
-		{
-			int nodeTransformation[16];
-			int multiplied[16];
-			pTransform->getTransformation(nodeTransformation);
-			MATRIXARRAY_MUL_TO(nodeTransformation, current, multiplied);
-			memcpy(current, multiplied, sizeof(current));
-		}
+		return m_pParent->getName(true);
 	}
-	memcpy(pBuffer, current, sizeof(current));
+	return name;
+}
+
+const float* Node::getGlobalTransformation() const
+{
+	if(m_cache.isDirty)
+	{
+		int current[16];
+		memcpy(current, s_identity, sizeof(current));
+
+		vector<const Node*> hierarchy = getHierarchy();
+		for(size_t i=0; i<hierarchy.size(); i++)
+		{
+			if(const NodeTransform* pTransform = hierarchy[i]->toNodeTransform())
+			{
+				int nodeTransformation[16];
+				int multiplied[16];
+				pTransform->getTransformation(nodeTransformation);
+				MATRIXARRAY_MUL_TO(nodeTransformation, current, multiplied);
+				memcpy(current, multiplied, sizeof(current));
+			}
+		}
+		for(size_t i=0; i<16; i++)
+		{
+			m_cache.globalTransformation[i] = (float)current[i];
+		}
+		m_cache.isDirty = false;
+	}
+	return m_cache.globalTransformation;
 }
 
 void Node::transformGlobal(int x, int y, int z, int* pX, int* pY, int* pZ, bool snapToVoxel) const
 {
-	int globalTransformation[16];
-	getGlobalTransformation(globalTransformation);
+	const float* globalTransformation = getGlobalTransformation();
 
-	float pos[4] = {(float)x, (float)y, (float)z, 1};
-	float result[4] = {0, 0, 0, 0};
+	float pos[3] = {(float)x, (float)y, (float)z};
+	float result[3] = {0, 0, 0};
 
 	if(snapToVoxel)
 	{
@@ -68,13 +85,20 @@ void Node::transformGlobal(int x, int y, int z, int* pX, int* pY, int* pZ, bool 
 		pos[2] += 0.5f;
 	}
 
-	float globalTransformationF[16];
-	for(size_t i=0; i<16; i++)
-	{
-		globalTransformationF[i] = (float)globalTransformation[i];
-	}
+	result[0] += globalTransformation[0] * pos[0];
+	result[0] += globalTransformation[1] * pos[1];
+	result[0] += globalTransformation[2] * pos[2];
+	result[0] += globalTransformation[3];
 
-	MATRIX_MUL_TO(globalTransformation, 4, 4, pos, 4, 1, result);
+	result[1] += globalTransformation[4] * pos[0];
+	result[1] += globalTransformation[5] * pos[1];
+	result[1] += globalTransformation[6] * pos[2];
+	result[1] += globalTransformation[7];
+
+	result[2] += globalTransformation[8] * pos[0];
+	result[2] += globalTransformation[9] * pos[1];
+	result[2] += globalTransformation[10] * pos[2];
+	result[2] += globalTransformation[11];
 
 	if(pX != nullptr)
 	{
