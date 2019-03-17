@@ -44,6 +44,7 @@ class Arguments
 		bool 					getArgument_ShouldShowHelp() const;
 		const Color*			getArgument_BorderColor() const;
 		bool 					getArgument_Verbose() const;
+		bool 					getArgument_RemoveHiddenVoxels() const;
 
 		bool					argumentWithoutValue(const string& key) const;
 

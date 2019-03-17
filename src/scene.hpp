@@ -23,8 +23,8 @@ class Scene
 	public:
 		Scene(bool verboseEnabled = false);
 		error 			load(const string& voxFilePath);
-		error 			saveAsPngArray(const string& targetFolderPath);
-		error 			saveAsMergedPng(const string& targetFilePath, const Color* pBorderColor = nullptr);
+		error 			saveAsPngArray(const string& targetFolderPath, bool removeHiddenVoxels = false);
+		error 			saveAsMergedPng(const string& targetFilePath, const Color* pBorderColor = nullptr, bool removeHiddenVoxels = false);
 
 		const Color* 	getVoxel(int x, int y, int z) const; // note that everything has ben rescaled by 2. so to get voxel x=3 you may want to input 6. too lazy to fix this right now
 		const Color& 	lookupPaletteColor(uint8_t colorIndex) const;
@@ -40,7 +40,7 @@ class Scene
 		void 			doubleScale(); // to fix pivotpoints that are not really at the center ( for example a 3,3,3 cube should have a pivot of 1.5, 1.5, 1.5 . but it has 1,1,1 and it messes with the rotation system )
 		void 			recenterOrigins(); // "part of the 'doubleScale()' pivotpoint hackfix"
 		void 			printVoxels();
-		void 			fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ);
+		void 			fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ, bool removeHiddenVoxels = false);
 		string 			expandTargetFilePath(const string& targetFilePath, size_t sceneSizeX, size_t sceneSizeY, size_t sceneSizeZ, int scenePosX, int scenePosY, int scenePosZ) const;
 
 		struct ChildToLink

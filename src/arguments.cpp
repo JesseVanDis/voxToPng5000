@@ -141,6 +141,11 @@ bool Arguments::getArgument_Verbose() const
 	return hasArgument("v");
 }
 
+bool Arguments::getArgument_RemoveHiddenVoxels() const
+{
+	return hasArgument("r");
+}
+
 error Arguments::getOptionNotFoundErrorMsg(const string& optionName) const
 {
 	string errorMsg = "Option '";
@@ -161,7 +166,7 @@ error Arguments::getValueNotValidErrorMsg(const string& optionName, const string
 
 bool Arguments::argumentWithoutValue(const string& key) const
 {
-	vector<string> keysWithoutValue = {"v", "h"};
+	vector<string> keysWithoutValue = {"v", "h", "r"};
 	for(auto&& v : keysWithoutValue)
 	{
 		if(key == v)
@@ -187,5 +192,6 @@ void Arguments::printOptions() const
 	printf("  -b=COLORHEX          COLORHEX (argb) is the color code for the borders\n");
 	printf("                          * if -b is not set there will be no borders\n");
 	printf("  -v                   Talk a lot.\n");
+	printf("  -r                   Remove hidden voxels.\n");
 	printf("  -h                   Show this help text.\n");
 }

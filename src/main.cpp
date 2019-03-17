@@ -100,11 +100,11 @@ int main(int argc, char **argv)
 		switch(setting.result)
 		{
 			case Setting_SeperatePngs:
-				err = scene.saveAsPngArray(outputPath.result);
+				err = scene.saveAsPngArray(outputPath.result, args.getArgument_RemoveHiddenVoxels());
 				break;
 
 			case Setting_Merged:
-				err = scene.saveAsMergedPng(outputPath.result, args.getArgument_BorderColor());
+				err = scene.saveAsMergedPng(outputPath.result, args.getArgument_BorderColor(), args.getArgument_RemoveHiddenVoxels());
 				break;
 		}
 		if(!err.empty())

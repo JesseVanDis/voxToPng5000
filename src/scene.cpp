@@ -604,13 +604,132 @@ void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneW
 	}
 }
 
-void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ)
+static size_t removeHiddenVoxelsFromData(vector<const Color*>* pData, size_t w, size_t h, size_t d)
+{
+	assert(pData != nullptr);
+	const vector<const Color*> original = *pData;
+	vector<const Color*>& data = *pData;
+	size_t numVoxelsRemoved = 0u;
+
+	size_t surroundingIndices[9*3];
+
+	for(size_t z1=1; z1<(d-1); z1++)
+	{
+		size_t z0 = z1-1u;
+		size_t z2 = z1+1u;
+		for(size_t y1=1; y1<(h-1); y1++)
+		{
+			size_t y0 = y1-1u;
+			size_t y2 = y1+1u;
+			for(size_t x1=1; x1<(w-1); x1++)
+			{
+				size_t x0 = x1-1u;
+				size_t x2 = x1+1u;
+
+				surroundingIndices[13] = x1 + ( y1 * w ) + ( z1 * h * w );  // self
+
+				if(original[surroundingIndices[13]] == nullptr)
+				{
+					continue;
+				}
+
+				// back
+				surroundingIndices[0]  = x0 + ( y0 * w ) + ( z0 * h * w );
+				surroundingIndices[1]  = x1 + ( y0 * w ) + ( z0 * h * w );
+				surroundingIndices[2]  = x2 + ( y0 * w ) + ( z0 * h * w );
+				surroundingIndices[3]  = x0 + ( y1 * w ) + ( z0 * h * w );
+				surroundingIndices[4]  = x1 + ( y1 * w ) + ( z0 * h * w );
+				surroundingIndices[5]  = x2 + ( y1 * w ) + ( z0 * h * w );
+				surroundingIndices[6]  = x0 + ( y2 * w ) + ( z0 * h * w );
+				surroundingIndices[7]  = x1 + ( y2 * w ) + ( z0 * h * w );
+				surroundingIndices[8]  = x2 + ( y2 * w ) + ( z0 * h * w );
+
+				// middle
+				surroundingIndices[9]  = x0 + ( y0 * w ) + ( z1 * h * w );
+				surroundingIndices[10] = x1 + ( y0 * w ) + ( z1 * h * w );
+				surroundingIndices[11] = x2 + ( y0 * w ) + ( z1 * h * w );
+				surroundingIndices[12] = x0 + ( y1 * w ) + ( z1 * h * w );
+				// surroundingIndices[13] .................  self
+				surroundingIndices[14] = x2 + ( y1 * w ) + ( z1 * h * w );
+				surroundingIndices[15] = x0 + ( y2 * w ) + ( z1 * h * w );
+				surroundingIndices[16] = x1 + ( y2 * w ) + ( z1 * h * w );
+				surroundingIndices[17] = x2 + ( y2 * w ) + ( z1 * h * w );
+
+				// front
+				surroundingIndices[18] = x0 + ( y0 * w ) + ( z2 * h * w );
+				surroundingIndices[19] = x1 + ( y0 * w ) + ( z2 * h * w );
+				surroundingIndices[20] = x2 + ( y0 * w ) + ( z2 * h * w );
+				surroundingIndices[21] = x0 + ( y1 * w ) + ( z2 * h * w );
+				surroundingIndices[22] = x1 + ( y1 * w ) + ( z2 * h * w );
+				surroundingIndices[23] = x2 + ( y1 * w ) + ( z2 * h * w );
+				surroundingIndices[24] = x0 + ( y2 * w ) + ( z2 * h * w );
+				surroundingIndices[25] = x1 + ( y2 * w ) + ( z2 * h * w );
+				surroundingIndices[26] = x2 + ( y2 * w ) + ( z2 * h * w );
+
+				bool keep = false;
+				for(size_t i=0; i<27; i++)
+				{
+					assert(surroundingIndices[i] < original.size());
+					if(original[surroundingIndices[i]] == nullptr)
+					{
+						keep = true;
+						break;
+					}
+				}
+
+				if(!keep)
+				{
+					data[surroundingIndices[13]] = nullptr;
+					numVoxelsRemoved++;
+				}
+			}
+		}
+	}
+
+	return numVoxelsRemoved;
+}
+
+static size_t getNumVoxels(const vector<const Color*>& data)
+{
+	size_t numVoxels = 0u;
+	for(auto&& v : data)
+	{
+		if(v != nullptr)
+		{
+			numVoxels++;
+		}
+	}
+	return numVoxels;
+}
+
+void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ, bool removeHiddenVoxels)
 {
 	uint w;
 	uint h;
 	uint d;
-	vector<const Color*> pData;
-	getVoxelsAtCorrectScale(&pData, &w, &h, &d, pScenePosX, pScenePosY, pScenePosZ);
+	vector<const Color*> data;
+	getVoxelsAtCorrectScale(&data, &w, &h, &d, pScenePosX, pScenePosY, pScenePosZ);
+
+	if(removeHiddenVoxels)
+	{
+		size_t numVoxelsBeforeCleanup = getNumVoxels(data);
+		if(m_verboseEnabled)
+		{
+			printf("num voxels currently: %u\n", (uint)getNumVoxels(data));
+			printf("removing hidden voxels...\n");
+		}
+		size_t numRemovedVoxels = removeHiddenVoxelsFromData(&data, w, h, d);
+		size_t numVoxelsAfterCleanup = numVoxelsBeforeCleanup - numRemovedVoxels;
+		if(m_verboseEnabled)
+		{
+			printf("num voxels reduced by: %u%%\n", (uint)((1.0 - ((double)numVoxelsAfterCleanup / (double)numVoxelsBeforeCleanup)) * 100.0) );
+		}
+	}
+
+	if(m_verboseEnabled)
+	{
+		printf("total voxel count: %u\n", (uint)getNumVoxels(data));
+	}
 
 	layers.resize(d);
 	for(uint z=0; z<d; z++)
@@ -624,11 +743,11 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 			{
 				const size_t s = (size_t)x+((size_t)y*(size_t)w)+((size_t)z*(size_t)h*(size_t)w);
 				const size_t t = x+y*w;
-				assert(s < pData.size());
-				if(pData[s] != nullptr)
+				assert(s < data.size());
+				if(data[s] != nullptr)
 				{
 					assert(t < layer.size());
-					layer[t] = *pData[s];
+					layer[t] = *data[s];
 				}
 			}
 		}
@@ -648,7 +767,7 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 	}
 }
 
-error Scene::saveAsPngArray(const string& targetFolderPath)
+error Scene::saveAsPngArray(const string& targetFolderPath, bool removeHiddenVoxels)
 {
 	if(m_verboseEnabled)
 	{
@@ -660,7 +779,7 @@ error Scene::saveAsPngArray(const string& targetFolderPath)
 	size_t depth = 0;
 
 	vector<vector<Color>> imageLayers;
-	fillImageLayers(imageLayers, &width, &height, &depth, nullptr, nullptr, nullptr);
+	fillImageLayers(imageLayers, &width, &height, &depth, nullptr, nullptr, nullptr, removeHiddenVoxels);
 
 	for(size_t i=0; i<imageLayers.size(); i++)
 	{
@@ -687,7 +806,7 @@ error Scene::saveAsPngArray(const string& targetFolderPath)
 	return "";
 }
 
-error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderColor)
+error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderColor, bool removeHiddenVoxels)
 {
 	size_t width = 0;
 	size_t height = 0;
@@ -697,7 +816,7 @@ error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderC
 	int posZ = 0;
 
 	vector<vector<Color>> imageLayers;
-	fillImageLayers(imageLayers, &width, &height, &depth, &posX, &posY, &posZ);
+	fillImageLayers(imageLayers, &width, &height, &depth, &posX, &posY, &posZ, removeHiddenVoxels);
 
 	const string filePath = expandTargetFilePath(targetFilePath, width, height, depth, posX, posY, posZ);
 	const bool drawBorder = pBorderColor != nullptr;
