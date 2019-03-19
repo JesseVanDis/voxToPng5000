@@ -20,8 +20,8 @@ struct ArgumentResult
 		result = res;
 		err = errorMsg;
 	}
-	bool hasError() const { return err != ""; }
-	bool handleError() const { if(err != "") { printf("%s\n", err.c_str()); return true; } else return false; }
+	bool hasError() const { return !err.empty(); }
+	bool handleError() const { if(!err.empty()) { printf("%s\n", err.c_str()); return true; } else return false; }
 
 	error err;
 	T result;
@@ -45,6 +45,7 @@ class Arguments
 		const Color*			getArgument_BorderColor() const;
 		bool 					getArgument_Verbose() const;
 		bool 					getArgument_RemoveHiddenVoxels() const;
+		vector<int>				getArgument_ClipEdges() const;
 
 		bool					argumentWithoutValue(const string& key) const;
 

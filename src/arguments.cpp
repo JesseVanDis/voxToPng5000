@@ -146,6 +146,49 @@ bool Arguments::getArgument_RemoveHiddenVoxels() const
 	return hasArgument("r");
 }
 
+vector<int> Arguments::getArgument_ClipEdges() const
+{
+	vector<int> distances;
+	if(hasArgument("c"))
+	{
+		string value = getArgument("c", string(""));
+
+		replaceAll(value, "(", "");
+		replaceAll(value, ")", "");
+		replaceAll(value, " ", "");
+		vector<string> numbers;
+		string number;
+		for(auto&& c : value)
+		{
+			if(c != ',')
+			{
+				char str[2] = {c, '\0'};
+				number += string(str);
+			}
+			else if(!number.empty())
+			{
+				numbers.push_back(number);
+				number.clear();
+			}
+			else
+			{
+				numbers.push_back("0");
+			}
+		}
+		if(!number.empty())
+		{
+			numbers.push_back(number);
+		}
+
+		for(auto&& numStr : numbers)
+		{
+			distances.push_back(stoi(numStr.c_str()));
+		}
+		distances.resize(6, 0);
+	}
+	return distances;
+}
+
 error Arguments::getOptionNotFoundErrorMsg(const string& optionName) const
 {
 	string errorMsg = "Option '";
@@ -186,6 +229,7 @@ void Arguments::printOptions() const
 	printf("                            the filename will then be something like: ~/output_16_16.png.\n");
 	printf("                            Formatting options are:\n");
 	printf("                              SIZE_X, SIZE_Y, SIZE_Z, POS_X, POS_Y, POS_Z\n");
+	printf("                              ( when -g is set: CHUNK_POS_X, CHUNK_POS_Y, CHUNK_POS_Z )\n");
 	printf("  -s=SETTING           SETTING can be: 'seperate', 'merged'.\n");
 	printf("                          * if its 'array' then OUTPUT should be a directory.\n");
 	printf("                          * if its 'merged' then OUTPUT a png filepath.\n");
@@ -193,5 +237,10 @@ void Arguments::printOptions() const
 	printf("                          * if -b is not set there will be no borders\n");
 	printf("  -v                   Talk a lot.\n");
 	printf("  -r                   Remove hidden voxels.\n");
+	printf("  -c=DIR_DIST          DIR_DIST is an array of 6 numbers that contains the distance and direction of clipped edges.\n");
+	printf("                          * Example: 'voxToPng ... -c \"(0, 0, 2, 0, 0, 0)\"'\n");
+	printf("                            will clip away 2 layers from the bottom\n");
+	printf("                            directions: Left, Back, Bottom, Right, Front, Top\n");
+	printf("  -p=POS               SIZE is an array of 3 numbers that represent the chunk size in which to split the image up.\n");
 	printf("  -h                   Show this help text.\n");
 }

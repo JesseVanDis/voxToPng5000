@@ -20,7 +20,7 @@ error NodeShapeModel::load(Loader& loader)
 {
 	m_id = loader.readNextInt32();
 	error err = m_attributes.load(loader);
-	if(err != "")
+	if(!err.empty())
 	{
 		return err;
 	}
@@ -46,7 +46,7 @@ NodeShape::NodeShape(const Context& context)
 error NodeShape::load(Loader& loader)
 {
 	error err = Node::load(loader);
-	if(err != "")
+	if(!err.empty())
 	{
 		return err;
 	}
@@ -57,7 +57,7 @@ error NodeShape::load(Loader& loader)
 	{
 		shared_ptr<NodeShapeModel> model(new NodeShapeModel(getContext()));
 		err = model->load(loader);
-		if(err != "")
+		if(!err.empty())
 		{
 			return err;
 		}

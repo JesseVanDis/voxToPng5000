@@ -97,14 +97,20 @@ int main(int argc, char **argv)
 			return 2;
 		}
 
+
+		SavingContext savingContext;
+		savingContext.clippingEdges = args.getArgument_ClipEdges();
+		savingContext.pBorderColor = args.getArgument_BorderColor();
+		savingContext.removeHiddenVoxels = args.getArgument_RemoveHiddenVoxels();
+
 		switch(setting.result)
 		{
 			case Setting_SeperatePngs:
-				err = scene.saveAsPngArray(outputPath.result, args.getArgument_RemoveHiddenVoxels());
+				err = scene.saveAsPngArray(outputPath.result, savingContext);
 				break;
 
 			case Setting_Merged:
-				err = scene.saveAsMergedPng(outputPath.result, args.getArgument_BorderColor(), args.getArgument_RemoveHiddenVoxels());
+				err = scene.saveAsMergedPng(outputPath.result, savingContext);
 				break;
 		}
 		if(!err.empty())

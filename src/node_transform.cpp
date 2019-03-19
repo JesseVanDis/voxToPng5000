@@ -19,7 +19,7 @@ NodeTransformFrame::NodeTransformFrame()
 error NodeTransformFrame::load(Loader& loader)
 {
 	error err = m_attributes.load(loader);
-	if(err != "")
+	if(!err.empty())
 	{
 		return err;
 	}
@@ -155,13 +155,13 @@ NodeTransform::NodeTransform(const Context& context)
 error NodeTransform::load(Loader& loader)
 {
 	string err = Node::load(loader);
-	if(err != "")
+	if(!err.empty())
 	{
 		return err;
 	}
 
 	err = m_pChild->load(loader);
-	if(err != "")
+	if(!err.empty())
 	{
 		return err;
 	}
@@ -175,7 +175,7 @@ error NodeTransform::load(Loader& loader)
 	{
 		NodeTransformFrame frame;
 		err = frame.load(loader);
-		if(err != "")
+		if(!err.empty())
 		{
 			return err;
 		}

@@ -100,10 +100,10 @@ error Scene::load(const string& voxFilePath)
 			printf("loading palette\n");
 		}
 		string key = loader.seek("RGBA", true);
-		if(key != "")
+		if(!key.empty())
 		{
 			err = m_palette.load(loader);
-			if(err != "")
+			if(!err.empty())
 			{
 				return err;
 			}
@@ -689,6 +689,40 @@ static size_t removeHiddenVoxelsFromData(vector<const Color*>* pData, size_t w, 
 	return numVoxelsRemoved;
 }
 
+static void clipVoxelsFromEdges(vector<const Color*>* pData, size_t w, size_t h, size_t d, const vector<int>& clippingDistances)
+{
+	assert(pData != nullptr);
+	vector<const Color*>& data = *pData;
+
+	int clipping[6] = {0,0,0,0,0,0};
+	for(uint i=0; i<min(6u, (uint)clippingDistances.size()); i++)
+	{
+		clipping[i] = clippingDistances[i];
+	}
+
+	for(size_t z=0; z<d; z++)
+	{
+		for(size_t y=0; y<h; y++)
+		{
+			for(size_t x=0; x<w; x++)
+			{
+				bool keep = x >= clipping[0]
+						 && y >= clipping[1]
+						 && z >= clipping[2]
+						 && x < (w-clipping[3])
+						 && y < (h-clipping[4])
+						 && z < (d-clipping[5]);
+
+				if(!keep)
+				{
+					size_t t = x + ( y * w ) + ( z * h * w );
+					data[t] = nullptr;
+				}
+			}
+		}
+	}
+}
+
 static size_t getNumVoxels(const vector<const Color*>& data)
 {
 	size_t numVoxels = 0u;
@@ -702,7 +736,7 @@ static size_t getNumVoxels(const vector<const Color*>& data)
 	return numVoxels;
 }
 
-void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ, bool removeHiddenVoxels)
+void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ, const SavingContext& context)
 {
 	uint w;
 	uint h;
@@ -710,24 +744,34 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 	vector<const Color*> data;
 	getVoxelsAtCorrectScale(&data, &w, &h, &d, pScenePosX, pScenePosY, pScenePosZ);
 
-	if(removeHiddenVoxels)
+	size_t numVoxelsBeforeCleanup = getNumVoxels(data);
+
+	if(context.removeHiddenVoxels)
 	{
-		size_t numVoxelsBeforeCleanup = getNumVoxels(data);
 		if(m_verboseEnabled)
 		{
 			printf("num voxels currently: %u\n", (uint)getNumVoxels(data));
 			printf("removing hidden voxels...\n");
 		}
-		size_t numRemovedVoxels = removeHiddenVoxelsFromData(&data, w, h, d);
-		size_t numVoxelsAfterCleanup = numVoxelsBeforeCleanup - numRemovedVoxels;
+		removeHiddenVoxelsFromData(&data, w, h, d);
+	}
+
+	if(!context.clippingEdges.empty())
+	{
 		if(m_verboseEnabled)
 		{
-			printf("num voxels reduced by: %u%%\n", (uint)((1.0 - ((double)numVoxelsAfterCleanup / (double)numVoxelsBeforeCleanup)) * 100.0) );
+			printf("clipping edges...\n");
 		}
+		clipVoxelsFromEdges(&data, w, h, d, context.clippingEdges);
 	}
 
 	if(m_verboseEnabled)
 	{
+		size_t numVoxels = getNumVoxels(data);
+		if(numVoxelsBeforeCleanup != numVoxels)
+		{
+			printf("num voxels reduced by: %u%%\n", (uint)((1.0 - ((double)numVoxels / (double)numVoxelsBeforeCleanup)) * 100.0) );
+		}
 		printf("total voxel count: %u\n", (uint)getNumVoxels(data));
 	}
 
@@ -767,7 +811,7 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 	}
 }
 
-error Scene::saveAsPngArray(const string& targetFolderPath, bool removeHiddenVoxels)
+error Scene::saveAsPngArray(const string& targetFolderPath, const SavingContext& context)
 {
 	if(m_verboseEnabled)
 	{
@@ -779,7 +823,7 @@ error Scene::saveAsPngArray(const string& targetFolderPath, bool removeHiddenVox
 	size_t depth = 0;
 
 	vector<vector<Color>> imageLayers;
-	fillImageLayers(imageLayers, &width, &height, &depth, nullptr, nullptr, nullptr, removeHiddenVoxels);
+	fillImageLayers(imageLayers, &width, &height, &depth, nullptr, nullptr, nullptr, context);
 
 	for(size_t i=0; i<imageLayers.size(); i++)
 	{
@@ -797,7 +841,7 @@ error Scene::saveAsPngArray(const string& targetFolderPath, bool removeHiddenVox
 			return "cannot write an image of width or height 0.";
 		}
 		error err = savePng(layer, width, height, outputPath, true);
-		if(err != "")
+		if(!err.empty())
 		{
 			return err;
 		}
@@ -806,7 +850,7 @@ error Scene::saveAsPngArray(const string& targetFolderPath, bool removeHiddenVox
 	return "";
 }
 
-error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderColor, bool removeHiddenVoxels)
+error Scene::saveAsMergedPng(const string& targetFilePath, const SavingContext& context)
 {
 	size_t width = 0;
 	size_t height = 0;
@@ -816,10 +860,10 @@ error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderC
 	int posZ = 0;
 
 	vector<vector<Color>> imageLayers;
-	fillImageLayers(imageLayers, &width, &height, &depth, &posX, &posY, &posZ, removeHiddenVoxels);
+	fillImageLayers(imageLayers, &width, &height, &depth, &posX, &posY, &posZ, context);
 
 	const string filePath = expandTargetFilePath(targetFilePath, width, height, depth, posX, posY, posZ);
-	const bool drawBorder = pBorderColor != nullptr;
+	const bool drawBorder = context.pBorderColor != nullptr;
 	const size_t imgWidth = (width * depth)+(drawBorder ? (depth-1) : 0);
 	const size_t imgHeight = height;
 
@@ -860,7 +904,7 @@ error Scene::saveAsMergedPng(const string& targetFilePath, const Color* pBorderC
 			{
 				size_t xPos = z*width;
 				size_t targetIndex = (((xPos + imgWidth*yPos)+z)-1);
-				data[targetIndex] = *pBorderColor;
+				data[targetIndex] = *context.pBorderColor;
 			}
 		}
 	}
