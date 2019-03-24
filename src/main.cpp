@@ -97,9 +97,32 @@ int main(int argc, char **argv)
 			return 2;
 		}
 
-
 		SavingContext savingContext;
-		savingContext.clippingEdges = args.getArgument_ClipEdges();
+		vector<int> clippingEdges = args.getArgument_ClipEdges();
+		if(clippingEdges.size() == 6)
+		{
+			savingContext.clipping.left = clippingEdges[0];
+			savingContext.clipping.back = clippingEdges[1];
+			savingContext.clipping.bottom = clippingEdges[2];
+			savingContext.clipping.right = clippingEdges[3];
+			savingContext.clipping.front = clippingEdges[4];
+			savingContext.clipping.top = clippingEdges[5];
+		}
+
+		vector<int> chunkDetails = args.getArgument_ChunkSizeAndPos();
+		if(chunkDetails.size() >= 3)
+		{
+			savingContext.chunkSetup.sizeX = (uint)chunkDetails[0];
+			savingContext.chunkSetup.sizeY = (uint)chunkDetails[1];
+			savingContext.chunkSetup.sizeZ = (uint)chunkDetails[2];
+			if(chunkDetails.size() == 6)
+			{
+				savingContext.chunkSetup.offsetX = chunkDetails[3];
+				savingContext.chunkSetup.offsetY = chunkDetails[4];
+				savingContext.chunkSetup.offsetZ = chunkDetails[5];
+			}
+		}
+
 		savingContext.pBorderColor = args.getArgument_BorderColor();
 		savingContext.removeHiddenVoxels = args.getArgument_RemoveHiddenVoxels();
 

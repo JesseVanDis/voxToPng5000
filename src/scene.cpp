@@ -196,7 +196,10 @@ error Scene::load(const string& voxFilePath)
 	}
 	doubleScale();
 	recenterOrigins();
-	// printVoxels(); // for debugging
+
+#ifdef PRINT_VOXELS
+	printVoxels(); // for debugging
+#endif
 
 	return "";
 }
@@ -312,35 +315,30 @@ void Scene::getBounds(int32_t* pX0, int32_t* pY0, int32_t* pZ0, int32_t* pX1, in
 	}
 }
 
-const Color* Scene::getVoxel(int x, int y, int z) const
-{
-	for(auto&& node : m_nodes)
-	{
-		if(const NodeShape* pShape = node->toNodeShape())
-		{
-			if(const Color* pColor = pShape->getVoxelGlobal(x, y, z))
-			{
-				return pColor;
-			}
-		}
-	}
-	return nullptr;
-}
-
 const Color& Scene::lookupPaletteColor(uint8_t colorIndex) const
 {
-	m_palette.lookupColor(colorIndex);
+	return m_palette.lookupColor(colorIndex);
 }
 
-string Scene::expandTargetFilePath(const string& targetFilePath, size_t sceneSizeX, size_t sceneSizeY, size_t sceneSizeZ, int scenePosX, int scenePosY, int scenePosZ) const
+string Scene::expandTargetFilePath(const string& targetFilePath, uint sceneSizeX, uint sceneSizeY, uint sceneSizeZ, int scenePosX, int scenePosY, int scenePosZ, uint numChunks, int chunkPosX, int chunkPosY, int chunkPosZ) const
 {
 	string result = targetFilePath;
+	if(numChunks > 1)
+	{
+		if(((result.find("{CHUNKPOS_X}", 0)) == std::string::npos) && ((result.find("{CHUNKPOS_Y}", 0)) == std::string::npos) && ((result.find("{CHUNKPOS_Z}", 0)) == std::string::npos))
+		{
+			replaceAll(result, ".png", "_{CHUNKPOS_X}_{CHUNKPOS_Y}_{CHUNKPOS_Z}");
+		}
+	}
 	replaceAll(result, "{SIZE_X}", to_string(sceneSizeX));
 	replaceAll(result, "{SIZE_Y}", to_string(sceneSizeY));
 	replaceAll(result, "{SIZE_Z}", to_string(sceneSizeZ));
 	replaceAll(result, "{POS_X}", to_string(scenePosX));
 	replaceAll(result, "{POS_Y}", to_string(scenePosY));
 	replaceAll(result, "{POS_Z}", to_string(scenePosZ));
+	replaceAll(result, "{CHUNKPOS_X}", to_string(chunkPosX));
+	replaceAll(result, "{CHUNKPOS_Y}", to_string(chunkPosY));
+	replaceAll(result, "{CHUNKPOS_Z}", to_string(chunkPosZ));
 	return result;
 }
 
@@ -351,7 +349,7 @@ void Scene::doubleScale()
 	{
 		if(const NodeTransform* pTransformConst = node->toNodeTransform())
 		{
-			NodeTransform* pTransform = const_cast<NodeTransform*>(pTransformConst); // yeah ugly I know. wanna fight ?
+			NodeTransform* pTransform = const_cast<NodeTransform*>(pTransformConst); // yeah ugly I know. wanna fight ? // NOLINT
 			int x=0;
 			int y=0;
 			int z=0;
@@ -369,7 +367,7 @@ void Scene::doubleScale()
 		{
 			if (const NodeTransform* pParentTransformConst = node->getParent() != nullptr ? node->getParent()->toNodeTransform() : nullptr)
 			{
-				NodeTransform* pTransform = const_cast<NodeTransform*>(pParentTransformConst); // yeah ugly I know. wanna fight ?
+				NodeTransform* pTransform = const_cast<NodeTransform*>(pParentTransformConst); // yeah ugly I know. wanna fight ? // NOLINT
 				int32_t w = 0;
 				int32_t h = 0;
 				int32_t d = 0;
@@ -513,9 +511,8 @@ void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneW
 	{
 		pVoxels->resize((((size_t)w)*((size_t)h)*((size_t)d)), nullptr);
 
-		for(size_t nodeIndex = 0; nodeIndex < m_nodes.size(); nodeIndex++)
+		for(const auto& node : m_nodes)
 		{
-			auto& node = m_nodes[nodeIndex];
 			if(const NodeShape* pShape = node->toNodeShape())
 			{
 				if(m_verboseEnabled)
@@ -545,17 +542,17 @@ void Scene::getVoxelsAtCorrectScale(vector<const Color*>* pVoxels, uint* pSceneW
 					{
 						int z=z0l;
 						assert(z0l-z0 >= 0);
-						size_t zi=(z0l-z0)/2;
+						size_t zi=(size_t)(z0l-z0)/2;
 						for(; z<z1l; z+=2)
 						{
 							int y=y0l;
 							assert(y0l-y0 >= 0);
-							size_t yi=(y0l-y0)/2;
+							size_t yi= (size_t)(y0l - y0)/2;
 							for(; y<y1l; y+=2)
 							{
 								int x=x0l;
 								assert(x0l-x0 >= 0);
-								size_t xi=(x0l-x0)/2;
+								size_t xi=(size_t)(x0l-x0)/2;
 								for(; x<x1l; x+=2)
 								{
 									if(const Color* pColor = pShape->getVoxelGlobal(x, y, z, &modelId))
@@ -667,7 +664,7 @@ static size_t removeHiddenVoxelsFromData(vector<const Color*>* pData, size_t w, 
 				surroundingIndices[26] = x2 + ( y2 * w ) + ( z2 * h * w );
 
 				bool keep = false;
-				for(size_t i=0; i<27; i++)
+				for(size_t i=0; i<27; i++) // NOLINT
 				{
 					assert(surroundingIndices[i] < original.size());
 					if(original[surroundingIndices[i]] == nullptr)
@@ -689,17 +686,11 @@ static size_t removeHiddenVoxelsFromData(vector<const Color*>* pData, size_t w, 
 	return numVoxelsRemoved;
 }
 
-static void clipVoxelsFromEdges(vector<const Color*>* pData, size_t w, size_t h, size_t d, const vector<int>& clippingDistances)
+static void clipVoxelsFromEdges(vector<const Color*>* pData, uint w, uint h, uint d, int left, int back, int bottom, int right, int front, int top)
 {
 	assert(pData != nullptr);
 	vector<const Color*>& data = *pData;
-
-	int clipping[6] = {0,0,0,0,0,0};
-	for(uint i=0; i<min(6u, (uint)clippingDistances.size()); i++)
-	{
-		clipping[i] = clippingDistances[i];
-	}
-
+	const int clipping[6] = {left, back, bottom, right, front, top};
 	for(size_t z=0; z<d; z++)
 	{
 		for(size_t y=0; y<h; y++)
@@ -736,7 +727,7 @@ static size_t getNumVoxels(const vector<const Color*>& data)
 	return numVoxels;
 }
 
-void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ, const SavingContext& context)
+void Scene::fillImageLayers(vector<ImageLayer>& layers, uint* pWidth, uint* pHeight, uint* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ, const SavingContext& context)
 {
 	uint w;
 	uint h;
@@ -756,13 +747,13 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 		removeHiddenVoxelsFromData(&data, w, h, d);
 	}
 
-	if(!context.clippingEdges.empty())
+	if((context.clipping.left != 0) || (context.clipping.back != 0) || (context.clipping.bottom != 0) || (context.clipping.right != 0) || (context.clipping.front != 0) || (context.clipping.top != 0))
 	{
 		if(m_verboseEnabled)
 		{
 			printf("clipping edges...\n");
 		}
-		clipVoxelsFromEdges(&data, w, h, d, context.clippingEdges);
+		clipVoxelsFromEdges(&data, w, h, d, context.clipping.left, context.clipping.back, context.clipping.bottom, context.clipping.right, context.clipping.front, context.clipping.top);
 	}
 
 	if(m_verboseEnabled)
@@ -778,7 +769,7 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 	layers.resize(d);
 	for(uint z=0; z<d; z++)
 	{
-		vector<Color>& layer = layers[z];
+		vector<Color>& layer = layers[z].pixels;
 		layer.resize(w*h);
 
 		for(uint y=0; y<h; y++)
@@ -811,6 +802,115 @@ void Scene::fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size
 	}
 }
 
+bool Chunk::isPointInside(int x, int y, int z) const
+{
+	return x >= posX && y >= posY && z >= posZ && x < (int)(posX + sizeX) && y < (int)(posY + sizeY) && z < (int)(posZ + sizeZ);
+}
+
+
+static vector<Chunk> splitImageLayersToChunks(const vector<ImageLayer>& layers, int centerPosX, int centerPosY, int centerPosZ, uint sceneWidth, uint sceneHeight, uint sceneDepth, uint chunkWidth, uint chunkHeight, uint chunkDepth, int offsetX, int offsetY, int offsetZ)
+{
+	vector<Chunk> chunks;
+
+	int startX = offsetX;
+	int startY = offsetY;
+	int startZ = offsetZ;
+
+	while(startX > -centerPosX && chunkWidth > 0)
+	{
+		startX -= chunkWidth;
+	}
+	while(startY > -centerPosY && chunkHeight > 0)
+	{
+		startY -= chunkHeight;
+	}
+	while(startZ > -centerPosZ && chunkDepth > 0)
+	{
+		startZ -= chunkDepth;
+	}
+
+	int endX = startX+(int)sceneWidth;
+	int endY = startY+(int)sceneHeight;
+	int endZ = startZ+(int)sceneDepth;
+
+	if(chunkWidth <= 0)
+	{
+		startX = -centerPosX;
+		endX = startX+(int)sceneWidth;
+		chunkWidth=(int)sceneWidth;
+	}
+
+	if(chunkHeight <= 0)
+	{
+		startY = -centerPosY;
+		endY = startY+sceneHeight;
+		chunkHeight=sceneHeight;
+	}
+
+	if(chunkDepth <= 0)
+	{
+		startZ = -centerPosZ;
+		endZ = startZ+sceneDepth;
+		chunkDepth=sceneDepth;
+	}
+
+	for(int x=startX; x<endX; x+=chunkWidth) for(int y=startY; y<endY; y+=chunkHeight) for(int z=startZ; z<endZ; z+=chunkDepth)
+	{
+		Chunk chunk;
+		chunk.posX = x;
+		chunk.posY = y;
+		chunk.posZ = z;
+		chunk.sizeX = chunkWidth;
+		chunk.sizeY = chunkHeight;
+		chunk.sizeZ = chunkDepth;
+		chunk.layers.resize(chunkDepth);
+		for(auto&& layer : chunk.layers)
+		{
+			layer.pixels.resize(chunkWidth * chunkHeight);
+		}
+		chunks.push_back(chunk);
+	}
+
+	for(size_t imgZ=0; imgZ < layers.size(); imgZ++)
+	{
+		const int z = (int)imgZ - centerPosZ;
+		const ImageLayer& layer = layers[imgZ];
+		for(size_t imgY=0; imgY<sceneHeight; imgY++)
+		{
+			const int y = (int)imgY - centerPosY;
+			for(size_t imgX=0; imgX<sceneWidth; imgX++)
+			{
+				const int x = (int)imgX - centerPosX;
+				const size_t sourceIndex = imgX + (imgY * sceneWidth);
+				Chunk* pChunk = nullptr;
+				for(auto&& chunk : chunks)
+				{
+					if(chunk.isPointInside(x,y,z))
+					{
+						pChunk = &chunk;
+						break;
+					}
+				}
+				assert(pChunk != nullptr);
+				const int chunkVoxelPosX = x - pChunk->posX;
+				const int chunkVoxelPosY = y - pChunk->posY;
+				const int chunkVoxelPosZ = z - pChunk->posZ;
+				assert(chunkVoxelPosX >= 0);
+				assert(chunkVoxelPosY >= 0);
+				assert(chunkVoxelPosZ >= 0);
+
+				assert(chunkVoxelPosZ < pChunk->layers.size());
+				ImageLayer& chunkImageLayer = pChunk->layers[chunkVoxelPosZ];
+				size_t targetIndex = chunkVoxelPosX + ((size_t)chunkVoxelPosY * pChunk->sizeX);
+				assert(targetIndex < chunkImageLayer.pixels.size());
+				assert(sourceIndex < layer.pixels.size());
+				chunkImageLayer.pixels[targetIndex] = layer.pixels[sourceIndex];
+			}
+		}
+	}
+	return chunks;
+}
+
 error Scene::saveAsPngArray(const string& targetFolderPath, const SavingContext& context)
 {
 	if(m_verboseEnabled)
@@ -818,16 +918,16 @@ error Scene::saveAsPngArray(const string& targetFolderPath, const SavingContext&
 		printf("saving as multiple png's to: %s\n", targetFolderPath.c_str());
 	}
 
-	size_t width = 0;
-	size_t height = 0;
-	size_t depth = 0;
+	uint width = 0;
+	uint height = 0;
+	uint depth = 0;
 
-	vector<vector<Color>> imageLayers;
+	vector<ImageLayer> imageLayers;
 	fillImageLayers(imageLayers, &width, &height, &depth, nullptr, nullptr, nullptr, context);
 
 	for(size_t i=0; i<imageLayers.size(); i++)
 	{
-		vector<Color>& layer = imageLayers[i];
+		vector<Color>& layer = imageLayers[i].pixels;
 		string imageName = "output_";
 		imageName += to_string(i);
 		imageName += ".png";
@@ -852,67 +952,78 @@ error Scene::saveAsPngArray(const string& targetFolderPath, const SavingContext&
 
 error Scene::saveAsMergedPng(const string& targetFilePath, const SavingContext& context)
 {
-	size_t width = 0;
-	size_t height = 0;
-	size_t depth = 0;
+	uint width = 0;
+	uint height = 0;
+	uint depth = 0;
 	int posX = 0;
 	int posY = 0;
 	int posZ = 0;
 
-	vector<vector<Color>> imageLayers;
-	fillImageLayers(imageLayers, &width, &height, &depth, &posX, &posY, &posZ, context);
+	vector<ImageLayer> globalImageLayers;
+	fillImageLayers(globalImageLayers, &width, &height, &depth, &posX, &posY, &posZ, context);
 
-	const string filePath = expandTargetFilePath(targetFilePath, width, height, depth, posX, posY, posZ);
-	const bool drawBorder = context.pBorderColor != nullptr;
-	const size_t imgWidth = (width * depth)+(drawBorder ? (depth-1) : 0);
-	const size_t imgHeight = height;
+	vector<Chunk> chunks = splitImageLayersToChunks(globalImageLayers, -posX, -posY, -posZ, width, height, depth, context.chunkSetup.sizeX, context.chunkSetup.sizeY, context.chunkSetup.sizeZ, context.chunkSetup.offsetX, context.chunkSetup.offsetY, context.chunkSetup.offsetZ);
 
-	const size_t numPixels = imgWidth*imgHeight;
-
-	if(m_verboseEnabled)
+	for(auto&& chunk : chunks)
 	{
-		printf("saving as single png to: %s. (canvas size: %u, %u)\n", filePath.c_str(), (uint)imgWidth, (uint)imgHeight);
-	}
+		const vector<ImageLayer>& imageLayers = chunk.layers;
+		const string filePath = expandTargetFilePath(targetFilePath, width, height, depth, posX, posY, posZ, (uint)chunks.size(), chunk.posX, chunk.posY, chunk.posZ);
+		const bool drawBorder = context.pBorderColor != nullptr;
+		const size_t imgWidth = (width * depth)+(drawBorder ? (depth-1) : 0);
+		const size_t imgHeight = height;
 
-	vector<Color> data;
-	if(numPixels >= data.max_size())
-	{
-		char error[1024];
-		sprintf(error, "cannot create an image of size: %u, %u. its too big. max amount of pixels is: %u\n", (uint)imgWidth, (uint)imgHeight, (uint)(data.max_size()));
-		return string(error);
-	}
+		const size_t numPixels = imgWidth*imgHeight;
 
-	data.resize(numPixels);
-
-	for(size_t z=0; z<imageLayers.size(); z++)
-	{
-		const vector<Color>& image2d = imageLayers[z];
-		for(size_t y=0; y<height; y++)
+		if(m_verboseEnabled)
 		{
-			size_t yPos = y;
-			for(size_t x=0; x<width; x++)
-			{
-				size_t xPos = (z*width+x);
+			printf("saving as single png to: %s. (canvas size: %u, %u)\n", filePath.c_str(), (uint)imgWidth, (uint)imgHeight);
+		}
 
-				size_t targetIndex = (xPos + imgWidth*yPos)+(drawBorder ? z : 0);
-				size_t sourceIndex = x + width*y;
-				assert(targetIndex < data.size());
-				assert(sourceIndex < image2d.size());
-				data[targetIndex] = image2d[sourceIndex];
-			}
-			if(drawBorder && z > 0)
+		vector<Color> data;
+		if(numPixels >= data.max_size())
+		{
+			char error[1024];
+			sprintf(error, "cannot create an image of size: %u, %u. its too big. max amount of pixels is: %u\n", (uint)imgWidth, (uint)imgHeight, (uint)(data.max_size()));
+			return string(error);
+		}
+
+		data.resize(numPixels);
+
+		for(size_t z=0; z<imageLayers.size(); z++)
+		{
+			const vector<Color>& image2d = imageLayers[z].pixels;
+			for(size_t y=0; y<height; y++)
 			{
-				size_t xPos = z*width;
-				size_t targetIndex = (((xPos + imgWidth*yPos)+z)-1);
-				data[targetIndex] = *context.pBorderColor;
+				size_t yPos = y;
+				for(size_t x=0; x<width; x++)
+				{
+					size_t xPos = (z*width+x);
+
+					size_t targetIndex = (xPos + imgWidth*yPos)+(drawBorder ? z : 0);
+					size_t sourceIndex = x + width*y;
+					assert(targetIndex < data.size());
+					assert(sourceIndex < image2d.size());
+					data[targetIndex] = image2d[sourceIndex];
+				}
+				if(drawBorder && z > 0)
+				{
+					size_t xPos = z*width;
+					size_t targetIndex = (((xPos + imgWidth*yPos)+z)-1);
+					data[targetIndex] = *context.pBorderColor;
+				}
 			}
 		}
-	}
 
-	if(width == 0 || height == 0)
-	{
-		return "cannot write an image of width or height 0.";
-	}
+		if(width == 0 || height == 0)
+		{
+			return "cannot write an image of width or height 0.";
+		}
 
-	return savePng(data, imgWidth, imgHeight, filePath, true);
+		error err = savePng(data, imgWidth, imgHeight, filePath, true);
+		if(!err.empty())
+		{
+			return err;
+		}
+	}
+	return "";
 }

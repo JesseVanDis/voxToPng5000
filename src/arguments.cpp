@@ -10,6 +10,37 @@ static bool endsWith(const string& text, const string& ending)
 	return false;
 }
 
+static vector<string> getValueArguments(const string& val)
+{
+	string value = val;
+	replaceAll(value, "(", "");
+	replaceAll(value, ")", "");
+	replaceAll(value, " ", "");
+	vector<string> result;
+	string build;
+	for(auto&& c : value)
+	{
+		if(c != ',')
+		{
+			char str[2] = {c, '\0'};
+			build += string(str);
+		}
+		else if(!build.empty())
+		{
+			result.push_back(build);
+			build.clear();
+		}
+		else
+		{
+			result.push_back("");
+		}
+	}
+	if(!build.empty())
+	{
+		result.push_back(build);
+	}
+	return result;
+}
 
 Arguments::Arguments(int argc, char **argv)
 {
@@ -151,42 +182,29 @@ vector<int> Arguments::getArgument_ClipEdges() const
 	vector<int> distances;
 	if(hasArgument("c"))
 	{
-		string value = getArgument("c", string(""));
-
-		replaceAll(value, "(", "");
-		replaceAll(value, ")", "");
-		replaceAll(value, " ", "");
-		vector<string> numbers;
-		string number;
-		for(auto&& c : value)
-		{
-			if(c != ',')
-			{
-				char str[2] = {c, '\0'};
-				number += string(str);
-			}
-			else if(!number.empty())
-			{
-				numbers.push_back(number);
-				number.clear();
-			}
-			else
-			{
-				numbers.push_back("0");
-			}
-		}
-		if(!number.empty())
-		{
-			numbers.push_back(number);
-		}
-
+		vector<string> numbers = getValueArguments(getArgument("c", string("")));
 		for(auto&& numStr : numbers)
 		{
-			distances.push_back(stoi(numStr.c_str()));
+			distances.push_back(numStr.empty() ? 0 : stoi(numStr));
 		}
 		distances.resize(6, 0);
 	}
 	return distances;
+}
+
+vector<int> Arguments::getArgument_ChunkSizeAndPos() const
+{
+	vector<int> result;
+	if(hasArgument("g"))
+	{
+		vector<string> numbers = getValueArguments(getArgument("g", string("")));
+		for(auto&& numStr : numbers)
+		{
+			result.push_back(numStr.empty() ? 0 : stoi(numStr));
+		}
+		result.resize(6, 0);
+	}
+	return result;
 }
 
 error Arguments::getOptionNotFoundErrorMsg(const string& optionName) const
@@ -241,6 +259,9 @@ void Arguments::printOptions() const
 	printf("                          * Example: 'voxToPng ... -c \"(0, 0, 2, 0, 0, 0)\"'\n");
 	printf("                            will clip away 2 layers from the bottom\n");
 	printf("                            directions: Left, Back, Bottom, Right, Front, Top\n");
+	printf("  -g=SIZE_POS          SIZE_POS is an array of 6 numbers that represent the chunk size in which to split the image up, and chunk offset pos.\n");
+	printf("                          * Example: 'voxToPng ... -g \"(32, 32, -1, 0, 0, 0)\"'\n");
+	printf("                            -1 = infinite size\n");
 	printf("  -p=POS               SIZE is an array of 3 numbers that represent the chunk size in which to split the image up.\n");
 	printf("  -h                   Show this help text.\n");
 }

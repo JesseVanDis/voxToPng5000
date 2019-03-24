@@ -19,7 +19,44 @@ struct SavingContext
 {
 	const Color* 	pBorderColor = nullptr;
 	bool 			removeHiddenVoxels = false;
-	vector<int> 	clippingEdges;
+
+	struct
+	{
+		int left = 0;
+		int back = 0;
+		int bottom = 0;
+		int right = 0;
+		int front = 0;
+		int top = 0;
+	} clipping;
+
+	struct
+	{
+		uint sizeX = 0;
+		uint sizeY = 0;
+		uint sizeZ = 0;
+		int offsetX = 0;
+		int offsetY = 0;
+		int offsetZ = 0;
+	} chunkSetup;
+};
+
+struct ImageLayer
+{
+	vector<Color> pixels;
+};
+
+struct Chunk
+{
+	vector<ImageLayer> layers;
+	int posX;
+	int posY;
+	int posZ;
+	uint sizeX;
+	uint sizeY;
+	uint sizeZ;
+
+	bool isPointInside(int x, int y, int z) const;
 };
 
 class Scene
@@ -28,12 +65,11 @@ class Scene
 	friend class NodeShapeModel;
 
 	public:
-		Scene(bool verboseEnabled = false);
+		explicit Scene(bool verboseEnabled = false);
 		error 			load(const string& voxFilePath);
 		error 			saveAsPngArray(const string& targetFolderPath, const SavingContext& context = SavingContext());
 		error 			saveAsMergedPng(const string& targetFilePath, const SavingContext& context = SavingContext());
 
-		const Color* 	getVoxel(int x, int y, int z) const; // note that everything has ben rescaled by 2. so to get voxel x=3 you may want to input 6. too lazy to fix this right now
 		const Color& 	lookupPaletteColor(uint8_t colorIndex) const;
 		void  			getBounds(int* pX0, int* pY0, int* pZ0, int* pX1, int* pY1, int* pZ1) const;
 
@@ -47,8 +83,8 @@ class Scene
 		void 			doubleScale(); // to fix pivotpoints that are not really at the center ( for example a 3,3,3 cube should have a pivot of 1.5, 1.5, 1.5 . but it has 1,1,1 and it messes with the rotation system )
 		void 			recenterOrigins(); // "part of the 'doubleScale()' pivotpoint hackfix"
 		void 			printVoxels();
-		void 			fillImageLayers(vector<vector<Color> >& layers, size_t* pWidth, size_t* pHeight, size_t* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ, const SavingContext& context = SavingContext());
-		string 			expandTargetFilePath(const string& targetFilePath, size_t sceneSizeX, size_t sceneSizeY, size_t sceneSizeZ, int scenePosX, int scenePosY, int scenePosZ) const;
+		void 			fillImageLayers(vector<ImageLayer>& layers, uint* pWidth, uint* pHeight, uint* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ, const SavingContext& context = SavingContext());
+		string 			expandTargetFilePath(const string& targetFilePath, uint sceneSizeX, uint sceneSizeY, uint sceneSizeZ, int scenePosX, int scenePosY, int scenePosZ, uint numChunks, int chunkPosX, int chunkPosY, int chunkPosZ) const;
 
 		struct ChildToLink
 		{

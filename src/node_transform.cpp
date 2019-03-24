@@ -103,9 +103,9 @@ error NodeTransformFrame::load(Loader& loader)
 			}
 			else if(m_transformation[2] == 0 && m_transformation[6] == 0)
 			{
+				m_transformation[8] = 0;
 				m_transformation[9] = 0;
 				m_transformation[10] = sign;
-				m_transformation[11] = 0;
 			}
 		}
 	}

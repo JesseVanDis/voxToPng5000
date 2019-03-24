@@ -46,6 +46,7 @@ class Arguments
 		bool 					getArgument_Verbose() const;
 		bool 					getArgument_RemoveHiddenVoxels() const;
 		vector<int>				getArgument_ClipEdges() const;
+		vector<int>				getArgument_ChunkSizeAndPos() const;
 
 		bool					argumentWithoutValue(const string& key) const;
 
