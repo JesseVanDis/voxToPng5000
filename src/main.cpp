@@ -112,9 +112,9 @@ int main(int argc, char **argv)
 		vector<int> chunkDetails = args.getArgument_ChunkSizeAndPos();
 		if(chunkDetails.size() >= 3)
 		{
-			savingContext.chunkSetup.sizeX = (uint)chunkDetails[0];
-			savingContext.chunkSetup.sizeY = (uint)chunkDetails[1];
-			savingContext.chunkSetup.sizeZ = (uint)chunkDetails[2];
+			savingContext.chunkSetup.sizeX = (uint)max(chunkDetails[0], 0);
+			savingContext.chunkSetup.sizeY = (uint)max(chunkDetails[1], 0);
+			savingContext.chunkSetup.sizeZ = (uint)max(chunkDetails[2], 0);
 			if(chunkDetails.size() == 6)
 			{
 				savingContext.chunkSetup.offsetX = chunkDetails[3];

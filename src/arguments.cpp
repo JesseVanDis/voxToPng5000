@@ -247,7 +247,7 @@ void Arguments::printOptions() const
 	printf("                            the filename will then be something like: ~/output_16_16.png.\n");
 	printf("                            Formatting options are:\n");
 	printf("                              SIZE_X, SIZE_Y, SIZE_Z, POS_X, POS_Y, POS_Z\n");
-	printf("                              ( when -g is set: CHUNK_POS_X, CHUNK_POS_Y, CHUNK_POS_Z )\n");
+	printf("                              ( when -g is set: CHUNKSIZE_X, CHUNKSIZE_Y, CHUNKSIZE_Z, CHUNKPOS_X, CHUNKPOS_Y, CHUNKPOS_Z )\n");
 	printf("  -s=SETTING           SETTING can be: 'seperate', 'merged'.\n");
 	printf("                          * if its 'array' then OUTPUT should be a directory.\n");
 	printf("                          * if its 'merged' then OUTPUT a png filepath.\n");

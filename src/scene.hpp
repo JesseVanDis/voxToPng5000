@@ -52,12 +52,14 @@ struct Chunk
 	int posX;
 	int posY;
 	int posZ;
-	uint sizeX;
-	uint sizeY;
-	uint sizeZ;
+	uint width;
+	uint height;
+	uint depth;
 
 	bool isPointInside(int x, int y, int z) const;
 };
+
+struct ExpandFilepathContext;
 
 class Scene
 {
@@ -84,7 +86,7 @@ class Scene
 		void 			recenterOrigins(); // "part of the 'doubleScale()' pivotpoint hackfix"
 		void 			printVoxels();
 		void 			fillImageLayers(vector<ImageLayer>& layers, uint* pWidth, uint* pHeight, uint* pDepth, int* pScenePosX, int* pScenePosY, int* pScenePosZ, const SavingContext& context = SavingContext());
-		string 			expandTargetFilePath(const string& targetFilePath, uint sceneSizeX, uint sceneSizeY, uint sceneSizeZ, int scenePosX, int scenePosY, int scenePosZ, uint numChunks, int chunkPosX, int chunkPosY, int chunkPosZ) const;
+		string 			expandTargetFilePath(const ExpandFilepathContext& context) const;
 
 		struct ChildToLink
 		{

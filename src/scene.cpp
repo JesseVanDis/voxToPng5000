@@ -16,6 +16,31 @@
 
 // https://github.com/ephtracy/voxel-model/blob/master/MagicaVoxel-file-format-vox.txt
 
+struct ExpandFilepathContext
+{
+	string targetFilePath;
+	struct
+	{
+		int posX = 0;
+		int posY = 0;
+		int posZ = 0;
+		uint width = 0;
+		uint height = 0;
+		uint depth = 0;
+	} scene;
+
+	struct
+	{
+		int posX = 0;
+		int posY = 0;
+		int posZ = 0;
+		uint width = 0;
+		uint height = 0;
+		uint depth = 0;
+	} chunk;
+	uint numChunks = 0;
+};
+
 Scene::Scene(bool verboseEnabled)
 {
 	m_verboseEnabled = verboseEnabled;
@@ -320,25 +345,28 @@ const Color& Scene::lookupPaletteColor(uint8_t colorIndex) const
 	return m_palette.lookupColor(colorIndex);
 }
 
-string Scene::expandTargetFilePath(const string& targetFilePath, uint sceneSizeX, uint sceneSizeY, uint sceneSizeZ, int scenePosX, int scenePosY, int scenePosZ, uint numChunks, int chunkPosX, int chunkPosY, int chunkPosZ) const
+string Scene::expandTargetFilePath(const ExpandFilepathContext& context) const
 {
-	string result = targetFilePath;
-	if(numChunks > 1)
+	string result = context.targetFilePath;
+	if(context.numChunks > 1)
 	{
 		if(((result.find("{CHUNKPOS_X}", 0)) == std::string::npos) && ((result.find("{CHUNKPOS_Y}", 0)) == std::string::npos) && ((result.find("{CHUNKPOS_Z}", 0)) == std::string::npos))
 		{
 			replaceAll(result, ".png", "_{CHUNKPOS_X}_{CHUNKPOS_Y}_{CHUNKPOS_Z}");
 		}
 	}
-	replaceAll(result, "{SIZE_X}", to_string(sceneSizeX));
-	replaceAll(result, "{SIZE_Y}", to_string(sceneSizeY));
-	replaceAll(result, "{SIZE_Z}", to_string(sceneSizeZ));
-	replaceAll(result, "{POS_X}", to_string(scenePosX));
-	replaceAll(result, "{POS_Y}", to_string(scenePosY));
-	replaceAll(result, "{POS_Z}", to_string(scenePosZ));
-	replaceAll(result, "{CHUNKPOS_X}", to_string(chunkPosX));
-	replaceAll(result, "{CHUNKPOS_Y}", to_string(chunkPosY));
-	replaceAll(result, "{CHUNKPOS_Z}", to_string(chunkPosZ));
+	replaceAll(result, "{SIZE_X}", to_string(context.scene.width));
+	replaceAll(result, "{SIZE_Y}", to_string(context.scene.height));
+	replaceAll(result, "{SIZE_Z}", to_string(context.scene.depth));
+	replaceAll(result, "{POS_X}", to_string(context.scene.posX));
+	replaceAll(result, "{POS_Y}", to_string(context.scene.posY));
+	replaceAll(result, "{POS_Z}", to_string(context.scene.posZ));
+	replaceAll(result, "{CHUNKSIZE_X}", to_string(context.chunk.width));
+	replaceAll(result, "{CHUNKSIZE_Y}", to_string(context.chunk.height));
+	replaceAll(result, "{CHUNKSIZE_Z}", to_string(context.chunk.depth));
+	replaceAll(result, "{CHUNKPOS_X}", to_string(context.chunk.posX));
+	replaceAll(result, "{CHUNKPOS_Y}", to_string(context.chunk.posY));
+	replaceAll(result, "{CHUNKPOS_Z}", to_string(context.chunk.posZ));
 	return result;
 }
 
@@ -804,7 +832,7 @@ void Scene::fillImageLayers(vector<ImageLayer>& layers, uint* pWidth, uint* pHei
 
 bool Chunk::isPointInside(int x, int y, int z) const
 {
-	return x >= posX && y >= posY && z >= posZ && x < (int)(posX + sizeX) && y < (int)(posY + sizeY) && z < (int)(posZ + sizeZ);
+	return x >= posX && y >= posY && z >= posZ && x < (int)(posX + width) && y < (int)(posY + height) && z < (int)(posZ + depth);
 }
 
 
@@ -812,47 +840,76 @@ static vector<Chunk> splitImageLayersToChunks(const vector<ImageLayer>& layers, 
 {
 	vector<Chunk> chunks;
 
-	int startX = offsetX;
-	int startY = offsetY;
-	int startZ = offsetZ;
+	int startX = 0;
+	int startY = 0;
+	int startZ = 0;
+	int endX = 0;
+	int endY = 0;
+	int endZ = 0;
 
-	while(startX > -centerPosX && chunkWidth > 0)
+	if(chunkWidth > 0)
 	{
-		startX -= chunkWidth;
-	}
-	while(startY > -centerPosY && chunkHeight > 0)
-	{
-		startY -= chunkHeight;
-	}
-	while(startZ > -centerPosZ && chunkDepth > 0)
-	{
-		startZ -= chunkDepth;
-	}
+		startX = offsetX;
+		while(startX > -centerPosX)
+		{
+			startX -= chunkWidth;
+		}
 
-	int endX = startX+(int)sceneWidth;
-	int endY = startY+(int)sceneHeight;
-	int endZ = startZ+(int)sceneDepth;
-
-	if(chunkWidth <= 0)
+		endX = startX;
+		while(endX <= (-centerPosX+(int)sceneWidth))
+		{
+			endX += chunkWidth;
+		}
+	}
+	else
 	{
 		startX = -centerPosX;
 		endX = startX+(int)sceneWidth;
 		chunkWidth=(int)sceneWidth;
 	}
 
-	if(chunkHeight <= 0)
+	if(chunkHeight > 0)
+	{
+		startY = offsetY;
+		while(startY > -centerPosY)
+		{
+			startY -= chunkHeight;
+		}
+
+		endY = startY;
+		while(endY <= (-centerPosY+(int)sceneHeight))
+		{
+			endY += chunkHeight;
+		}
+	}
+	else
 	{
 		startY = -centerPosY;
 		endY = startY+sceneHeight;
 		chunkHeight=sceneHeight;
 	}
 
-	if(chunkDepth <= 0)
+	if(chunkDepth > 0)
+	{
+		startZ = offsetZ;
+		while(startZ > -centerPosZ)
+		{
+			startZ -= chunkDepth;
+		}
+
+		endZ = startZ;
+		while(endZ <= (-centerPosZ+(int)sceneDepth))
+		{
+			endZ += chunkDepth;
+		}
+	}
+	else
 	{
 		startZ = -centerPosZ;
 		endZ = startZ+sceneDepth;
 		chunkDepth=sceneDepth;
 	}
+
 
 	for(int x=startX; x<endX; x+=chunkWidth) for(int y=startY; y<endY; y+=chunkHeight) for(int z=startZ; z<endZ; z+=chunkDepth)
 	{
@@ -860,9 +917,9 @@ static vector<Chunk> splitImageLayersToChunks(const vector<ImageLayer>& layers, 
 		chunk.posX = x;
 		chunk.posY = y;
 		chunk.posZ = z;
-		chunk.sizeX = chunkWidth;
-		chunk.sizeY = chunkHeight;
-		chunk.sizeZ = chunkDepth;
+		chunk.width = chunkWidth;
+		chunk.height = chunkHeight;
+		chunk.depth = chunkDepth;
 		chunk.layers.resize(chunkDepth);
 		for(auto&& layer : chunk.layers)
 		{
@@ -901,7 +958,7 @@ static vector<Chunk> splitImageLayersToChunks(const vector<ImageLayer>& layers, 
 
 				assert(chunkVoxelPosZ < pChunk->layers.size());
 				ImageLayer& chunkImageLayer = pChunk->layers[chunkVoxelPosZ];
-				size_t targetIndex = chunkVoxelPosX + ((size_t)chunkVoxelPosY * pChunk->sizeX);
+				size_t targetIndex = chunkVoxelPosX + ((size_t)chunkVoxelPosY * pChunk->width);
 				assert(targetIndex < chunkImageLayer.pixels.size());
 				assert(sourceIndex < layer.pixels.size());
 				chunkImageLayer.pixels[targetIndex] = layer.pixels[sourceIndex];
@@ -967,10 +1024,27 @@ error Scene::saveAsMergedPng(const string& targetFilePath, const SavingContext& 
 	for(auto&& chunk : chunks)
 	{
 		const vector<ImageLayer>& imageLayers = chunk.layers;
-		const string filePath = expandTargetFilePath(targetFilePath, width, height, depth, posX, posY, posZ, (uint)chunks.size(), chunk.posX, chunk.posY, chunk.posZ);
+
+		ExpandFilepathContext expandFilepathContext;
+		expandFilepathContext.targetFilePath = targetFilePath;
+		expandFilepathContext.scene.posX = posX;
+		expandFilepathContext.scene.posY = posY;
+		expandFilepathContext.scene.posZ = posZ;
+		expandFilepathContext.scene.width = width;
+		expandFilepathContext.scene.height = height;
+		expandFilepathContext.scene.depth = depth;
+		expandFilepathContext.numChunks = (uint)chunks.size();
+		expandFilepathContext.chunk.posX = chunk.posX;
+		expandFilepathContext.chunk.posY = chunk.posY;
+		expandFilepathContext.chunk.posZ = chunk.posZ;
+		expandFilepathContext.chunk.width = chunk.width;
+		expandFilepathContext.chunk.height = chunk.height;
+		expandFilepathContext.chunk.depth = chunk.depth;
+
+		const string filePath = expandTargetFilePath(expandFilepathContext);
 		const bool drawBorder = context.pBorderColor != nullptr;
-		const size_t imgWidth = (width * depth)+(drawBorder ? (depth-1) : 0);
-		const size_t imgHeight = height;
+		const size_t imgWidth = (chunk.width * chunk.depth)+(drawBorder ? (chunk.depth-1) : 0);
+		const size_t imgHeight = chunk.height;
 
 		const size_t numPixels = imgWidth*imgHeight;
 
@@ -992,29 +1066,29 @@ error Scene::saveAsMergedPng(const string& targetFilePath, const SavingContext& 
 		for(size_t z=0; z<imageLayers.size(); z++)
 		{
 			const vector<Color>& image2d = imageLayers[z].pixels;
-			for(size_t y=0; y<height; y++)
+			for(size_t y=0; y<chunk.height; y++)
 			{
 				size_t yPos = y;
-				for(size_t x=0; x<width; x++)
+				for(size_t x=0; x<chunk.width; x++)
 				{
-					size_t xPos = (z*width+x);
+					size_t xPos = (z*chunk.width+x);
 
 					size_t targetIndex = (xPos + imgWidth*yPos)+(drawBorder ? z : 0);
-					size_t sourceIndex = x + width*y;
+					size_t sourceIndex = x + chunk.width*y;
 					assert(targetIndex < data.size());
 					assert(sourceIndex < image2d.size());
 					data[targetIndex] = image2d[sourceIndex];
 				}
 				if(drawBorder && z > 0)
 				{
-					size_t xPos = z*width;
+					size_t xPos = z*chunk.width;
 					size_t targetIndex = (((xPos + imgWidth*yPos)+z)-1);
 					data[targetIndex] = *context.pBorderColor;
 				}
 			}
 		}
 
-		if(width == 0 || height == 0)
+		if(chunk.width == 0 || chunk.height == 0)
 		{
 			return "cannot write an image of width or height 0.";
 		}
