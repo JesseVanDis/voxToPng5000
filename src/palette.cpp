@@ -31,12 +31,12 @@ void Color::fromRgba(uint32_t rgba)
 	a = (uint8_t)((rgba & 0xff000000) >> 24);
 }
 
-void Color::fromArgb(uint32_t rgba)
+void Color::fromArgb(uint32_t argb)
 {
-	r = (uint8_t)((rgba & 0x00ff0000) >> 16);
-	g = (uint8_t)((rgba & 0x0000ff00) >> 8);
-	b = (uint8_t)((rgba & 0x000000ff) >> 0);
-	a = (uint8_t)((rgba & 0xff000000) >> 24);
+	r = (uint8_t)((argb & 0x00ff0000) >> 16);
+	g = (uint8_t)((argb & 0x0000ff00) >> 8);
+	b = (uint8_t)((argb & 0x000000ff) >> 0);
+	a = (uint8_t)((argb & 0xff000000) >> 24);
 }
 
 uint32_t Color::toRgbaHex() const
