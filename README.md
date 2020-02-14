@@ -51,10 +51,10 @@ voxToPng -i path\towards\the\voxelfile.vox -o path\towards\the\pngoutputfile.png
 
 Small overview of the options:
 ```
--i=INPUTFILE     the filepath towards the .vox file.
--o=OUTPUT        the target directory/filepath (supports format. more details at -h)
--b=COLORHEX      the color for the borders. (default: no borders)
--h               Show help ( and see more details )
+-i = INPUTFILE     the filepath towards the .vox file.
+-o = OUTPUT        the target directory/filepath (supports format. more details at -h)
+-b = COLORHEX      the color for the borders. (default: no borders)
+-h                 Show help ( and see more details )
 ```
 Example: 
 ```
